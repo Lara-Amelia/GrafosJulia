@@ -1,5 +1,6 @@
 #funções que alteram os argumentos recebidos tem ! no nome, por convenção
 #algoritmo de coloração guloso - apenas não colocaremos a mesma cor para vértices adjacentes
+#são usadas no máximo num_vertices cores
 
 #le as informações inciais do grafo: número de vértices e de arestas
 function leInfo!(nome_arquivo)
@@ -34,6 +35,24 @@ function leArestas!(nome_arquivo, matriz_adj)
             end
         end
     end
+end
+
+function coloracao!(matriz_adj, cores_vertices)
+#=
+    ideia inicial: 
+    inicializamos um array de tamanho num_vertices com -1 em todas as posições, 
+    indicando que ainda não foi atribuída cor para os vértices
+    os vértices são identificados pelo índice no vetor e o conteúdo que armazenam é o 
+    número da cor correspondente utilizada na coloração 
+
+    para cada vértice, percorremos a coluna (ou linha) correspondente ao vértice checando adjacências 
+    e, se uma cor já foi utilizada por vértices adjacentes, eliminamos o número associado à cor 
+    das possibilidades de cor para o vértice 
+    
+    utilizar algum tipo de registro (por exemplo, um array de valores booleanos) de forma a eliminar 
+    os valores específicos encontrados e, após a busca, atribuir ao vértice atual o menor valor 
+    "disponível" no registro
+=#
 end
 
 # "main"
