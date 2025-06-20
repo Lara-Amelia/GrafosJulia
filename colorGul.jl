@@ -2,6 +2,13 @@
 # algoritmo de coloração guloso - apenas não colocaremos a mesma cor para vértices adjacentes
 # são usadas no máximo num_vertices cores
 
+#struct para auxiliar na coloração por graus
+mutable struct infoVertice
+    id::Int
+    grau::Int
+    cor::Int
+end 
+
 #le as informações inciais do grafo: número de vértices e de arestas
 function leInfo!(nome_arquivo)
     num_vertices = 0
@@ -103,26 +110,90 @@ function coloracaoPrioridade!(matriz_adj, cores_vertices, num_vertices, priorida
     end
 end 
 
+#vertices será um vetor de structs infoVertice
 #obtem os graus de cada vertice e os armazena em um vetor graus
-function obtemGrauVertice(matriz_adj, graus, num_vertices)
+#também popula os objetos infoVertice com a flag de sem cor atribuída
+function obtemGrauVertice!(matriz_adj, vertices, num_vertices)
     for i in 1:num_vertices
         grauVert = 0 
 
         for j in 1:num_vertices
+            vertices.id = i
+            vertices.cor = -1 #flag para indicar que ainda não houve atribuição de cor
             if matriz_adj[i, j] == 1
                 grauVert += 1 
             end
         end 
-        graus[i] = grauVert 
+        vertices[i].grau = grauVert
     end 
 end
 
-function coloracaoGrauMax!(matriz_adj, cores_vertices, num_vertices)
+#vertices é o vetor de structs infoVertice, que é populado anteriormente chamando
+#o método obtemGrauVertice
+function coloracaoGrauMax!(matriz_adj, vertices, num_vertices)
+    #ordena os infoVertices pelo grau em ordem decrescente
+    #o restante da lógica é similar à utilizada na coloração com grau mínimo
+    sort!(vertices, by = v -> v.grau, rev = true)    
+    cores_disponiveis = Vector{Bool}(undef, num_vertices + 1)
 
+    cores_vertices_resultado = Vector{Int}(undef, num_vertices)
+    fill!(cores_vertices_resultado, -1)
+    
+    for v_info in vertices
+        vertex_id = v_info.id
+        fill!(cores_disponiveis, true)
+
+        for j in 1:num_vertices
+            if matriz_adj[vertex_id, j] == 1 && cores_vertices_resultado[j] != -1
+                cor_vizinho = cores_vertices_resultado[j]
+                if cor_vizinho >= 1 && cor_vizinho <= num_vertices + 1
+                    cores_disponiveis[cor_vizinho] = false
+                end
+            end
+        end
+
+        for k in 1:num_vertices
+                if cores_disponiveis[k] == true 
+                v_info.cor = k 
+                cores_vertices_resultado[vertex_id] = k
+                break
+            end
+        end
+    end
 end
 
-function coloracaoGrauMin!(matriz_adj, cores_vertices, num_vertices)
+#realiza a coloração por ordem crescente dos graus dos vértices
+#antes de chamarmos esse método, devemos obter as infos de graus para o vetor vértices
+function coloracaoGrauMin!(matriz_adj, vertices, num_vertices)
+    #ordena vértices em ordem crescente de grau
+    sort!(vertices, by = v -> v.grau)
+    cores_disponiveis = Vector{Bool}(undef, num_vertices + 1)
 
+    #como ordenamos o vetor vértices, as cores podem não estar corretamente relacionados a seus vértices
+    cores_vertices_resultado = Vector{Int}(undef, num_vertices)
+    fill!(cores_vertices_resultado, -1)
+    
+    for v_info in vertices
+        vertex_id = v_info.id
+        fill!(cores_disponiveis, true)
+
+        for j in 1:num_vertices
+            if matriz_adj[vertex_id, j] == 1 && cores_vertices_resultado[j] != -1
+                cor_vizinho = cores_vertices_resultado[j]
+                if cor_vizinho >= 1 && cor_vizinho <= num_vertices + 1
+                    cores_disponiveis[cor_vizinho] = false
+                end
+            end
+        end
+
+        for k in 1:num_vertices
+                if cores_disponiveis[k] == true 
+                v_info.cor = k 
+                cores_vertices_resultado[vertex_id] = k
+                break
+            end
+        end
+    end
 end
 
 function coloracaoHarmonica(matriz_adj, cores_vertices, num_vertices)
