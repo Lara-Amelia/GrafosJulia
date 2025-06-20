@@ -36,6 +36,7 @@ function leArestas!(nome_arquivo, matriz_adj)
     end
 end
 
+#coloração gulosa com prioridade sequencial (1, 2, 3, ...)
 function coloracao!(matriz_adj, cores_vertices, num_vertices)
 
     #o array 'cores_disponiveis_para_vertice' deve ser resetado para TRUE para CADA vértice que estamos colorindo
@@ -67,6 +68,67 @@ function coloracao!(matriz_adj, cores_vertices, num_vertices)
     end
 end
 
+#também faremos uma coloração seguindo o grau máximo e o grau mínimo dos vértices
+#e uma coloração harmônica de fato
+
+#coloração é feita segundo uma "lista de prioridade" definida em um vetor (vetor aleatório)
+function coloracaoPrioridade!(matriz_adj, cores_vertices, num_vertices, prioridade)
+    cores_disponíveis = Vector{Bool}(undef, num_vertices + 1)
+
+    for i in 1:num_vertices
+         #originalmente, todas as cores estão disponíveis e se tornarão indisponíveis á medida 
+         #em que "descobrimos" que já foram utilizadas e violam alguam restrição
+         fill!(cores_disponiveis, true)
+         for i in 1:num_vertices
+            #obtem o elemento/vértice de prioridade i do vetor de prioridades
+            prioritario = prioridade[i]
+            for j in 1:num_vertices
+                #se encontramos uma adjacência
+                if matriz_adj[prioritario, j] == 1
+                    if cores_vertices[j] != -1 && cores_vertices[j] <= num_vertices
+                        corAdj = cores_vertices[j]
+                        #a cor não está mais disponível
+                        cores_disponíveis[corAdj] = false
+                    end
+                end
+            end
+            for k in 1:num_vertices
+                if cores_disponiveis[k] == true 
+                cores_vertices[i] = k 
+                break
+            end
+        end
+        #CHECAR
+        cores_vertices[prioritario] = k
+    end
+end 
+
+#obtem os graus de cada vertice e os armazena em um vetor graus
+function obtemGrauVertice(matriz_adj, graus, num_vertices)
+    for i in 1:num_vertices
+        grauVert = 0 
+
+        for j in 1:num_vertices
+            if matriz_adj[i, j] == 1
+                grauVert += 1 
+            end
+        end 
+        graus[i] = grauVert 
+    end 
+end
+
+function coloracaoGrauMax!(matriz_adj, cores_vertices, num_vertices)
+
+end
+
+function coloracaoGrauMin!(matriz_adj, cores_vertices, num_vertices)
+
+end
+
+function coloracaoHarmonica(matriz_adj, cores_vertices, num_vertices)
+
+end
+
 println("Insira o nome do arquivo a ser lido: ")
 nome_arquivo = readline()
 
@@ -94,3 +156,4 @@ end
 
 nro_cores = maximum(cores_vertices)
 println("O número total de cores usado foi: $nro_cores")
+end
