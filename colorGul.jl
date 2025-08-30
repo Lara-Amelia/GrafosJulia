@@ -2,6 +2,8 @@
 # algoritmo de coloração guloso - apenas não colocaremos a mesma cor para vértices adjacentes
 # são usadas no máximo num_vertices cores
 
+
+println("rodando!!")
 #struct para auxiliar na coloração por graus
 mutable struct infoVertice
     id::Int
@@ -78,37 +80,38 @@ end
 #também faremos uma coloração seguindo o grau máximo e o grau mínimo dos vértices
 #e uma coloração harmônica de fato
 
-#coloração é feita segundo uma "lista de prioridade" definida em um vetor (vetor aleatório)
+#a função recebe um vetor 'prioridade' que define a ordem dos vértices a serem coloridos
 function coloracaoPrioridade!(matriz_adj, cores_vertices, num_vertices, prioridade)
-    cores_disponíveis = Vector{Bool}(undef, num_vertices + 1)
+    #cores_disponíveis rastreia as cores que podem ser usadas para o vértice atual
+    cores_disponiveis = Vector{Bool}(undef, num_vertices + 1)
 
+    #itera sobre o vetor 'prioridade' para colorir os vértices na ordem correta
     for i in 1:num_vertices
-         #originalmente, todas as cores estão disponíveis e se tornarão indisponíveis á medida 
-         #em que "descobrimos" que já foram utilizadas e violam alguam restrição
-         fill!(cores_disponiveis, true)
-         for i in 1:num_vertices
-            #obtem o elemento/vértice de prioridade i do vetor de prioridades
-            prioritario = prioridade[i]
-            for j in 1:num_vertices
-                #se encontramos uma adjacência
-                if matriz_adj[prioritario, j] == 1
-                    if cores_vertices[j] != -1 && cores_vertices[j] <= num_vertices
-                        corAdj = cores_vertices[j]
-                        #a cor não está mais disponível
-                        cores_disponíveis[corAdj] = false
-                    end
+        #obtém o vértice a ser colorido com base na lista de prioridade
+        vertice_prioritario = prioridade[i]
+        
+        #reseta o vetor de cores disponíveis para o novo vértice
+        fill!(cores_disponiveis, true)
+
+        #checa as cores dos vizinhos e marca as cores como indisponíveis
+        for j in 1:num_vertices
+            if matriz_adj[vertice_prioritario, j] == 1
+                cor_do_adjacente = cores_vertices[j]
+                if cor_do_adjacente != -1 && cor_do_adjacente <= num_vertices
+                    cores_disponiveis[cor_do_adjacente] = false
                 end
             end
-            for k in 1:num_vertices
-                if cores_disponiveis[k] == true 
-                cores_vertices[i] = k 
+        end
+
+        #atribui a menor cor disponível ao vértice prioritário
+        for k in 1:num_vertices
+            if cores_disponiveis[k] == true 
+                cores_vertices[vertice_prioritario] = k 
                 break
             end
         end
-        #CHECAR
-        cores_vertices[prioritario] = k
-    end
-end 
+    end 
+end
 
 #vertices será um vetor de structs infoVertice
 #obtem os graus de cada vertice e os armazena em um vetor graus
@@ -118,8 +121,8 @@ function obtemGrauVertice!(matriz_adj, vertices, num_vertices)
         grauVert = 0 
 
         for j in 1:num_vertices
-            vertices.id = i
-            vertices.cor = -1 #flag para indicar que ainda não houve atribuição de cor
+            vertices[i].id = i
+            vertices[i].cor = -1 #flag para indicar que ainda não houve atribuição de cor
             if matriz_adj[i, j] == 1
                 grauVert += 1 
             end
@@ -160,6 +163,7 @@ function coloracaoGrauMax!(matriz_adj, vertices, num_vertices)
             end
         end
     end
+    return cores_vertices_resultado
 end
 
 #realiza a coloração por ordem crescente dos graus dos vértices
@@ -194,9 +198,10 @@ function coloracaoGrauMin!(matriz_adj, vertices, num_vertices)
             end
         end
     end
+    return cores_vertices_resultado
 end
 
-function coloracaoHarmonica(matriz_adj, cores_vertices, num_vertices)
+function coloracaoHarmonica!(matriz_adj, cores_vertices, num_vertices)
 
 end
 
@@ -207,24 +212,35 @@ num_vertices, num_arestas = leInfo!(nome_arquivo)
 println("nro de vertices: $num_vertices")
 println("nro de arestas: $num_arestas")
 
-#inicializa a matriz de adjacência de dimensões num_vertices com zeros
-#e depois a inicializa com as infos lida do arquivo sobre arestas
 matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
-#println("Matriz de adjacência inicializada com arestas:")
-#println(matriz_adj) 
 
-#cria o array com entradas -1 e tam = num_vertices
-#-1 indica que ainda não foi atribuída cor para o vértice
-cores_vertices = fill(-1, num_vertices)
+#1. Coloração Gulosa Sequencial (1, 2, 3...)
+cores_sequencial = fill(-1, num_vertices)
+coloracao!(matriz_adj, cores_sequencial, num_vertices)
+nro_cores_seq = maximum(cores_sequencial)
+println("\n--- Coloração Sequencial ---")
+println("O número total de cores usado foi: $nro_cores_seq")
 
-coloracao!(matriz_adj, cores_vertices, num_vertices)
+#provavelmente mudaremos a forma de passar e receber os vetores com resultados das 
+#colorações, para evitar uso de memória para fins redundantes
+# 2. Coloração por Grau Máximo
+#inicialização do vetor de structs infoVertice
+vertices_grau_max = [infoVertice(i, 0, -1) for i in 1:num_vertices]
+#preenche o vetor com os graus
+obtemGrauVertice!(matriz_adj, vertices_grau_max, num_vertices)
+#realiza a coloração em si
+cores_grau_max = coloracaoGrauMax!(matriz_adj, vertices_grau_max, num_vertices)
+nro_cores_max = maximum(cores_grau_max)
+println("\n--- Coloração por Grau Máximo ---")
+println("O número total de cores usado foi: $nro_cores_max")
 
-println("\nResultados da Coloração:")
-for i in 1:num_vertices
-    println("Cor do vértice $i: $(cores_vertices[i])") 
-end
-
-nro_cores = maximum(cores_vertices)
-println("O número total de cores usado foi: $nro_cores")
-end
+# 3. Coloração por Grau Mínimo
+#mesmo processo do realizado para obter a coloração por grau máximo
+#(criar o vetor, popular, etc)
+vertices_grau_min = [infoVertice(i, 0, -1) for i in 1:num_vertices]
+obtemGrauVertice!(matriz_adj, vertices_grau_min, num_vertices)
+cores_grau_min = coloracaoGrauMin!(matriz_adj, vertices_grau_min, num_vertices)
+nro_cores_min = maximum(cores_grau_min)
+println("\n--- Coloração por Grau Mínimo ---")
+println("O número total de cores usado foi: $nro_cores_min")
