@@ -3,7 +3,7 @@
 # são usadas no máximo num_vertices cores
 
 
-println("rodando!!")
+#println("rodando!!")
 #struct para auxiliar na coloração por graus
 mutable struct infoVertice
     id::Int
@@ -201,23 +201,121 @@ function coloracaoGrauMin!(matriz_adj, vertices, num_vertices)
     return cores_vertices_resultado
 end
 
+#provavelmente precisa de correções
 function coloracaoHarmonica!(matriz_adj, cores_vertices, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
 
+    # Itera sobre cada vértice na ordem sequencial
+    for i in 1:num_vertices
+        
+        # Encontra a menor cor válida para o vértice i
+        for k in 1:num_vertices 
+            eh_valida_para_aresta = true
+            
+            # Checa se a cor 'k' é válida para todas as arestas do vértice i
+            for j in 1:num_vertices
+                if matriz_adj[i, j] == 1
+                    cor_vizinho = cores_vertices[j]
+                    
+                    if cor_vizinho != -1 # Aresta já colorida
+                        novo_par_cores = (min(k, cor_vizinho), max(k, cor_vizinho))
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida_para_aresta = false
+                            break
+                        end
+                    end
+                end
+            end
+            
+            # Se a cor 'k' é válida, atribui e atualiza o conjunto de cores usadas
+            if eh_valida_para_aresta
+                cores_vertices[i] = k
+                for j in 1:num_vertices
+                    if matriz_adj[i, j] == 1 && cores_vertices[j] != -1
+                        cor_vizinho = cores_vertices[j]
+                        novo_par_cores = (min(k, cor_vizinho), max(k, cor_vizinho))
+                        push!(cores_arestas_usadas, novo_par_cores)
+                    end
+                end
+                break
+            end
+        end
+    end
 end
 
-println("Insira o nome do arquivo a ser lido: ")
-nome_arquivo = readline()
+function coloracaoHarmonicaPrioridade!(matriz_adj, lista_prioridade::Vector{Int})
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices)
+    
+    #conjunto para armazenar pares de cores de arestas já usados
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    #itera sobre os vértices na ordem de prioridade definida pelo GA
+    for v_id in lista_prioridade
+        cor_valida = 1
+        
+        while true
+            eh_valida = true
+            
+            #checa cada vizinho do vértice atual (v_id)
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    #se o vizinho já foi colorido
+                    if cor_vizinho != 0
+                        #cria o par de cores da aresta (sempre em ordem crescente)
+                        novo_par_cores = (min(cor_valida, cor_vizinho), max(cor_valida, cor_vizinho))
+                        
+                        #se o par já foi usado, a cor não é válida
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break
+                        end
+                    end
+                end
+            end
+            
+            #se a cor 'cor_valida' não formou nenhum par repetido, ela pode ser usada
+            if eh_valida
+                cores_vertices[v_id] = cor_valida
+                
+                #adiciona os novos pares de cores de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_valida, cor_vizinho), max(cor_valida, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break
+            else
+                #tenta a próxima cor
+                cor_valida += 1
+            end
+        end
+    end
+    return cores_vertices
+end
 
-num_vertices, num_arestas = leInfo!(nome_arquivo)
-println("nro de vertices: $num_vertices")
-println("nro de arestas: $num_arestas")
+#println("Insira o nome do arquivo a ser lido: ")
+#nome_arquivo = readline()
 
-matriz_adj = zeros(Int, num_vertices, num_vertices)
+#num_vertices, num_arestas = leInfo!(nome_arquivo)
+#println("nro de vertices: $num_vertices")
+#println("nro de arestas: $num_arestas")
+
+#=matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
 
 #1. Coloração Gulosa Sequencial (1, 2, 3...)
 cores_sequencial = fill(-1, num_vertices)
 coloracao!(matriz_adj, cores_sequencial, num_vertices)
+for i in 1:num_vertices
+    println("cor do vertice $i: $(cores_sequencial[i])")
+end
 nro_cores_seq = maximum(cores_sequencial)
 println("\n--- Coloração Sequencial ---")
 println("O número total de cores usado foi: $nro_cores_seq")
@@ -244,3 +342,13 @@ cores_grau_min = coloracaoGrauMin!(matriz_adj, vertices_grau_min, num_vertices)
 nro_cores_min = maximum(cores_grau_min)
 println("\n--- Coloração por Grau Mínimo ---")
 println("O número total de cores usado foi: $nro_cores_min")
+
+#4. Coloração harmônica
+cores_aresta_distinguivel = fill(-1, num_vertices)
+coloracaoHarmonica!(matriz_adj, cores_aresta_distinguivel, num_vertices)
+nro_cores_aresta_dist = maximum(cores_aresta_distinguivel)
+println("\n--- Coloração Distinguível por Arestas ---")
+for i in 1:num_vertices
+    println("cor usada pelo vertice $i: $(cores_aresta_distinguivel[i])")
+end
+println("O número total de cores usado foi: $nro_cores_aresta_dist") =#
