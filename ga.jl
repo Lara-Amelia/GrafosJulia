@@ -131,7 +131,7 @@ end
 #função de fitness
 function fitness_harmonious_coloring(individual::Vector{Float64})
     lista_prioridade = sortperm(individual, rev = true)
-    cores_vertices = coloracaoHarmonicaPrioridade!(matriz_adj, lista_prioridade)
+    cores_vertices = coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
     return maximum(cores_vertices) #talvez seja melhor contar o nro de cores distintas usadas
 end
 
@@ -152,7 +152,7 @@ result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_custom_
 
 melhor_individuo = Metaheuristics.minimizer(result)
 lista_prioridade = sortperm(melhor_individuo, rev = true)
-cores_vertices = coloracaoHarmonicaPrioridade!(matriz_adj, lista_prioridade)
+cores_vertices = coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 
 println("\n--- Coloração harmônica final ---")
 for i in 1:num_vertices
