@@ -300,6 +300,59 @@ function coloracaoHarmonicaPrioridade!(matriz_adj, lista_prioridade::Vector{Int}
     return cores_vertices
 end
 
+function coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # Itera sobre os vértices na ordem de prioridade
+    for v_id in lista_prioridade
+        cor_candidata = 1
+        
+        while true
+            eh_valida = true
+            
+            # Checa se a cor candidata é válida para todos os vizinhos
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    if cor_vizinho != 0
+                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                        
+                        # Se o par de cores já foi usado, a cor candidata não é válida
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break # Sai do loop de vizinhos
+                        end
+                    end
+                end
+            end
+            
+            # Se a cor candidata não gerou nenhum conflito, ela é a escolhida
+            if eh_valida
+                cores_vertices[v_id] = cor_candidata
+                
+                # Adiciona os novos pares de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break # Sai do loop while e passa para o próximo vértice
+            else
+                # Se não for válida, tenta a próxima cor
+                cor_candidata += 1
+            end
+        end
+    end
+    return cores_vertices
+end
+
 #println("Insira o nome do arquivo a ser lido: ")
 #nome_arquivo = readline()
 
