@@ -1,0 +1,84 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fontspec}
+\usepackage[english, bidi=basic, provide=*]{babel}
+
+\babelfont{rm}{Noto Sans}
+
+\title{Melhor Resultado Global das Heurísticas Gulosas - Grafos Galaxy (a \le 25, v=1)}
+\author{Experimentos de Coloração Harmônica}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{table}[htbp]
+  \centering
+  \caption{Resumo: Melhor Coloração Harmônica (\min \chi_h) Encontrada entre as 3 Heurísticas}
+  \label{tab:greedy_summary_Galaxy}
+  \begin{tabular}{@{} l ccc l @{}}
+    \toprule
+Instância & N & M & \chi_h (Melhor) & Tempo (s) & Heurística \\
+\midrule
+a1\_b10\_c100\_v1 & 31 & 30 & 2 & 0.0062 & MinGrau \\
+a1\_b10\_c20\_v1 & 19 & 18 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c30\_v1 & 16 & 15 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c40\_v1 & 33 & 32 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c50\_v1 & 12 & 11 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c60\_v1 & 15 & 14 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c70\_v1 & 33 & 32 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c80\_v1 & 39 & 38 & 2 & 0.0000 & MinGrau \\
+a1\_b10\_c90\_v1 & 26 & 25 & 2 & 0.0000 & MinGrau \\
+a5\_b10\_c100\_v1 & 245 & 240 & 6 & 0.0006 & MinGrau \\
+a5\_b10\_c20\_v1 & 63 & 58 & 6 & 0.0000 & MinGrau \\
+a5\_b10\_c30\_v1 & 108 & 103 & 6 & 0.0001 & MinGrau \\
+a5\_b10\_c40\_v1 & 149 & 144 & 6 & 0.0001 & MinGrau \\
+a5\_b10\_c50\_v1 & 165 & 160 & 6 & 0.0014 & MinGrau \\
+a5\_b10\_c60\_v1 & 158 & 153 & 6 & 0.0001 & MinGrau \\
+a5\_b10\_c70\_v1 & 190 & 185 & 6 & 0.0002 & MinGrau \\
+a5\_b10\_c80\_v1 & 261 & 256 & 6 & 0.0003 & MinGrau \\
+a5\_b10\_c90\_v1 & 239 & 234 & 6 & 0.0004 & MinGrau \\
+a10\_b10\_c100\_v1 & 510 & 500 & 11 & 0.0011 & MinGrau \\
+a10\_b10\_c20\_v1 & 164 & 154 & 11 & 0.0001 & MinGrau \\
+a10\_b10\_c30\_v1 & 218 & 208 & 11 & 0.0003 & MinGrau \\
+a10\_b10\_c40\_v1 & 245 & 235 & 11 & 0.0002 & MinGrau \\
+a10\_b10\_c50\_v1 & 337 & 327 & 11 & 0.0004 & MinGrau \\
+a10\_b10\_c60\_v1 & 360 & 350 & 11 & 0.0013 & MinGrau \\
+a10\_b10\_c70\_v1 & 458 & 448 & 11 & 0.0009 & MinGrau \\
+a10\_b10\_c80\_v1 & 469 & 459 & 11 & 0.0010 & MinGrau \\
+a10\_b10\_c90\_v1 & 550 & 540 & 11 & 0.0023 & MinGrau \\
+a15\_b10\_c100\_v1 & 876 & 861 & 16 & 0.0041 & MinGrau \\
+a15\_b10\_c20\_v1 & 251 & 236 & 16 & 0.0005 & MinGrau \\
+a15\_b10\_c30\_v1 & 305 & 290 & 16 & 0.0008 & MinGrau \\
+a15\_b10\_c40\_v1 & 423 & 408 & 16 & 0.0009 & MinGrau \\
+a15\_b10\_c50\_v1 & 461 & 446 & 16 & 0.0009 & MinGrau \\
+a15\_b10\_c60\_v1 & 599 & 584 & 16 & 0.0018 & MinGrau \\
+a15\_b10\_c70\_v1 & 487 & 472 & 16 & 0.0011 & MinGrau \\
+a15\_b10\_c80\_v1 & 551 & 536 & 16 & 0.0024 & MinGrau \\
+a15\_b10\_c90\_v1 & 705 & 690 & 16 & 0.0047 & MinGrau \\
+a20\_b10\_c100\_v1 & 1027 & 1007 & 21 & 0.0078 & MinGrau \\
+a20\_b10\_c20\_v1 & 289 & 269 & 21 & 0.0005 & MinGrau \\
+a20\_b10\_c30\_v1 & 391 & 371 & 21 & 0.0007 & MinGrau \\
+a20\_b10\_c40\_v1 & 595 & 575 & 21 & 0.0021 & MinGrau \\
+a20\_b10\_c50\_v1 & 621 & 601 & 21 & 0.0020 & MinGrau \\
+a20\_b10\_c60\_v1 & 845 & 825 & 21 & 0.0045 & MinGrau \\
+a20\_b10\_c70\_v1 & 863 & 843 & 21 & 0.0073 & MinGrau \\
+a20\_b10\_c80\_v1 & 923 & 903 & 21 & 0.0063 & MinGrau \\
+a20\_b10\_c90\_v1 & 1013 & 993 & 21 & 0.0116 & MinGrau \\
+a25\_b10\_c100\_v1 & 1373 & 1348 & 26 & 0.0177 & MinGrau \\
+a25\_b10\_c20\_v1 & 387 & 362 & 26 & 0.0022 & MinGrau \\
+a25\_b10\_c30\_v1 & 557 & 532 & 26 & 0.0022 & MinGrau \\
+a25\_b10\_c40\_v1 & 604 & 579 & 26 & 0.0034 & MinGrau \\
+a25\_b10\_c50\_v1 & 797 & 772 & 26 & 0.0047 & MinGrau \\
+a25\_b10\_c60\_v1 & 814 & 789 & 26 & 0.0047 & MinGrau \\
+a25\_b10\_c70\_v1 & 1030 & 1005 & 26 & 0.0090 & MinGrau \\
+a25\_b10\_c80\_v1 & 1071 & 1046 & 26 & 0.0100 & MinGrau \\
+a25\_b10\_c90\_v1 & 1220 & 1195 & 26 & 0.0108 & MinGrau \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\end{document}

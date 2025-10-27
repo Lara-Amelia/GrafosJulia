@@ -353,6 +353,180 @@ function coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
     return cores_vertices
 end
 
+function obtemPrioridadePorGrau(matriz_adj, num_vertices, rev::Bool=false)
+    vertices = [infoVertice(i, 0, -1) for i in 1:num_vertices]
+    
+    # popula os graus (usando a função existente)
+    obtemGrauVertice!(matriz_adj, vertices, num_vertices)
+    
+    # ordena o vetor de structs
+    sort!(vertices, by = v -> v.grau, rev = rev)
+    
+    # extrai apenas os IDs (a lista de prioridade)
+    lista_prioridade = [v.id for v in vertices]
+    return lista_prioridade
+end
+
+function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # Itera sobre os vértices na ordem de prioridade
+    for v_id in lista_prioridade
+        cor_candidata = 1
+        
+        while true
+            eh_valida = true
+
+            # Checa se a cor candidata é válida para todos os vizinhos
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    # --- CHECK 1: "Proper Coloring" Rule ---
+                    if cor_candidata == cor_vizinho
+                        eh_valida = false
+                        break # Esta cor candidata é inválida
+                    end
+                    
+                    if cor_vizinho != 0
+                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                        
+                        # --- CHECK 2: Global Harmonic (H1) ---
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break # Sai do loop de vizinhos
+                        end
+                    end
+                end
+            end # Fim loop vizinhos
+            
+            # Se a cor candidata não gerou nenhum conflito, ela é a escolhida
+            if eh_valida
+                cores_vertices[v_id] = cor_candidata
+                
+                # Adiciona os novos pares de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break # Sai do loop while e passa para o próximo vértice
+            else
+                # Se não for válida, tenta a próxima cor
+                cor_candidata += 1
+            end
+        end # Fim loop while
+    end # Fim loop v_id
+    return cores_vertices
+end
+
+function coloracaoHarmonicaGrauMin!(matriz_adj)
+    num_vertices = size(matriz_adj, 1)
+    lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, false)
+    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+end
+
+function coloracaoHarmonicaGrauMax!(matriz_adj)
+    num_vertices = size(matriz_adj, 1)
+    lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, true)
+    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+end
+
+function coloracaoHarmonicaSaturacao!(matriz_adj)
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    saturation_degree = [sum(matriz_adj[v, :]) for v in 1:num_vertices]
+    degree_orig = copy(saturation_degree) 
+    
+    for step in 1:num_vertices
+        
+        best_v = -1
+        max_sat = -1
+        max_deg = -1
+        
+        for v in 1:num_vertices
+            if cores_vertices[v] == 0 
+                current_sat = saturation_degree[v]
+                current_deg = degree_orig[v]
+
+                if current_sat > max_sat
+                    max_sat = current_sat
+                    max_deg = current_deg
+                    best_v = v
+                elseif current_sat == max_sat && current_deg > max_deg
+                    max_deg = current_deg
+                    best_v = v
+                end
+            end
+        end
+        
+        v_id = best_v
+        
+        if v_id == -1
+            break 
+        end
+        
+        cor_candidata = 1
+        while true
+            eh_valida = true
+
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    # --- CHECK 1: "Proper Coloring" Rule ---
+                    if cor_candidata == cor_vizinho
+                        eh_valida = false
+                        break
+                    end
+                    
+                    if cor_vizinho != 0
+                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                        
+                        # --- CHECK 2: Global Harmonic (H1) ---
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break
+                        end
+                    end
+                end
+            end # Fim loop vizinhos
+            
+            if eh_valida
+                cores_vertices[v_id] = cor_candidata
+                
+                # Adiciona os novos pares de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break 
+            else
+                cor_candidata += 1
+            end
+        end # Fim loop while
+        
+        for neighbor_id in 1:num_vertices
+            if matriz_adj[v_id, neighbor_id] == 1 && cores_vertices[neighbor_id] == 0
+                saturation_degree[neighbor_id] -= 1
+            end
+        end
+    end # Fim loop step
+    return cores_vertices
+end
 #println("Insira o nome do arquivo a ser lido: ")
 #nome_arquivo = readline()
 

@@ -256,7 +256,7 @@ bounds = [zeros(num_vertices) ones(num_vertices)]'
 
 #cria uma instância do GA
 opts = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = typemax(Int))
-params = CustomGAParams(N = 100000, p_crossover = 0.5, p_mutation = 0.5, stag_limit = k, last_best = -1, stag_iters = 0)
+params = CustomGAParams(N = 1000, p_crossover = 0.5, p_mutation = 0.5, stag_limit = k, last_best = -1, stag_iters = 0)
 my_custom_ga = Metaheuristics.Algorithm(params, options = opts) 
 
 problem = Metaheuristics.Problem(fitness_harmonious_coloring, bounds)

@@ -1,0 +1,80 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[margin=1in]{geometry}
+\sisetup{round-mode=figures, round-precision=2}
+
+\begin{document}
+
+\section*{Resultados do Algoritmo Genético para Coloração Harmônica - Grafos Tipo \textbf{Galaxy}}
+
+\begin{table}[h!]
+    \centering
+    \caption{ Resultados da Execução do GA (N_{pop}=100, k=50) em Grafos Tipo \textbf{Galaxy} ($a \le 25, v=1$) (5 Repetições) }
+    \label{tab:ga_results_galaxy_v1}
+    \begin{tabular}{@{} l c S[table-format=2.2] S[table-format=1.2] S[table-format=1.2] @{}}
+        \toprule
+        Instância (a, b, c) & Parâmetros (N, M) & {Média de Cores (\si{\bar{\chi}_h})} & {Erro Padrão (SE)} & {Tempo Médio (s)} \\
+        \midrule
+        a1\_b10\_c20\_v1 & 19 \times 18 & 1.00 & 0.00 & 0.01 \\ 
+        a1\_b10\_c30\_v1 & 16 \times 15 & 1.00 & 0.00 & 0.01 \\ 
+        a1\_b10\_c40\_v1 & 33 \times 32 & 1.40 & 0.40 & 0.02 \\ 
+        a1\_b10\_c50\_v1 & 12 \times 11 & 1.00 & 0.00 & 0.01 \\ 
+        a1\_b10\_c60\_v1 & 15 \times 14 & 1.00 & 0.00 & 0.01 \\ 
+        a1\_b10\_c70\_v1 & 33 \times 32 & 1.20 & 0.20 & 0.02 \\ 
+        a1\_b10\_c80\_v1 & 39 \times 38 & 1.00 & 0.00 & 0.02 \\ 
+        a1\_b10\_c90\_v1 & 26 \times 25 & 1.00 & 0.00 & 0.01 \\ 
+        a1\_b10\_c100\_v1 & 31 \times 30 & 1.00 & 0.00 & 0.48 \\ 
+        a5\_b10\_c20\_v1 & 63 \times 58 & 7.00 & 0.32 & 0.07 \\ 
+        a5\_b10\_c30\_v1 & 108 \times 103 & 10.00 & 0.95 & 0.19 \\ 
+        a5\_b10\_c40\_v1 & 149 \times 144 & 11.80 & 1.07 & 0.39 \\ 
+        a5\_b10\_c50\_v1 & 165 \times 160 & 14.00 & 1.05 & 0.41 \\ 
+        a5\_b10\_c60\_v1 & 158 \times 153 & 14.00 & 0.55 & 0.60 \\ 
+        a5\_b10\_c70\_v1 & 190 \times 185 & 17.60 & 0.60 & 0.67 \\ 
+        a5\_b10\_c80\_v1 & 261 \times 256 & 23.80 & 2.46 & 2.06 \\ 
+        a5\_b10\_c90\_v1 & 239 \times 234 & 17.40 & 1.17 & 1.01 \\ 
+        a5\_b10\_c100\_v1 & 245 \times 240 & 18.20 & 1.39 & 0.86 \\ 
+        a10\_b10\_c20\_v1 & 164 \times 154 & 16.80 & 0.58 & 1.12 \\ 
+        a10\_b10\_c30\_v1 & 218 \times 208 & 18.00 & 0.84 & 1.88 \\ 
+        a10\_b10\_c40\_v1 & 245 \times 235 & 20.00 & 0.84 & 3.36 \\ 
+        a10\_b10\_c50\_v1 & 337 \times 327 & 22.00 & 0.45 & 4.36 \\ 
+        a10\_b10\_c60\_v1 & 360 \times 350 & 24.20 & 1.20 & 6.78 \\ 
+        a10\_b10\_c70\_v1 & 458 \times 448 & 34.80 & 0.86 & 11.77 \\ 
+        a10\_b10\_c80\_v1 & 469 \times 459 & 31.60 & 1.03 & 10.17 \\ 
+        a10\_b10\_c90\_v1 & 550 \times 540 & 35.80 & 1.43 & 19.53 \\ 
+        a10\_b10\_c100\_v1 & 510 \times 500 & 31.20 & 1.16 & 14.05 \\ 
+        a15\_b10\_c20\_v1 & 251 \times 236 & 23.60 & 0.51 & 7.29 \\ 
+        a15\_b10\_c30\_v1 & 305 \times 290 & 22.80 & 0.37 & 8.70 \\ 
+        a15\_b10\_c40\_v1 & 423 \times 408 & 29.80 & 0.37 & 14.84 \\ 
+        a15\_b10\_c50\_v1 & 461 \times 446 & 25.80 & 1.50 & 13.55 \\ 
+        a15\_b10\_c60\_v1 & 599 \times 584 & 32.40 & 0.93 & 32.71 \\ 
+        a15\_b10\_c70\_v1 & 487 \times 472 & 27.80 & 0.80 & 18.09 \\ 
+        a15\_b10\_c80\_v1 & 551 \times 536 & 31.40 & 1.08 & 33.97 \\ 
+        a15\_b10\_c90\_v1 & 705 \times 690 & 38.20 & 1.36 & 42.76 \\ 
+        a15\_b10\_c100\_v1 & 876 \times 861 & 45.20 & 2.82 & 111.72 \\ 
+        a20\_b10\_c20\_v1 & 289 \times 269 & 27.60 & 0.24 & 7.86 \\ 
+        a20\_b10\_c30\_v1 & 391 \times 371 & 29.00 & 0.32 & 14.82 \\ 
+        a20\_b10\_c40\_v1 & 595 \times 575 & 33.40 & 0.68 & 44.14 \\ 
+        a20\_b10\_c50\_v1 & 621 \times 601 & 31.20 & 1.71 & 33.27 \\ 
+        a20\_b10\_c60\_v1 & 845 \times 825 & 41.60 & 0.75 & 98.20 \\ 
+        a20\_b10\_c70\_v1 & 863 \times 843 & 40.80 & 0.73 & 101.23 \\ 
+        a20\_b10\_c80\_v1 & 923 \times 903 & 45.60 & 2.44 & 189.28 \\ 
+        a20\_b10\_c90\_v1 & 1013 \times 993 & 48.60 & 0.81 & 216.04 \\ 
+        a20\_b10\_c100\_v1 & 1027 \times 1007 & 48.20 & 1.77 & 160.65 \\ 
+        a25\_b10\_c20\_v1 & 387 \times 362 & 33.40 & 0.40 & 10.27 \\ 
+        a25\_b10\_c30\_v1 & 557 \times 532 & 35.40 & 0.40 & 21.05 \\ 
+        a25\_b10\_c40\_v1 & 604 \times 579 & 36.60 & 0.75 & 43.42 \\ 
+        a25\_b10\_c50\_v1 & 797 \times 772 & 38.80 & 1.16 & 117.96 \\ 
+        a25\_b10\_c60\_v1 & 814 \times 789 & 40.00 & 1.67 & 56.56 \\ 
+        a25\_b10\_c70\_v1 & 1030 \times 1005 & 44.00 & 2.05 & 151.42 \\ 
+        a25\_b10\_c80\_v1 & 1071 \times 1046 & 48.20 & 1.46 & 192.44 \\ 
+        a25\_b10\_c90\_v1 & 1220 \times 1195 & 52.20 & 1.98 & 272.97 \\ 
+        a25\_b10\_c100\_v1 & 1373 \times 1348 & 57.20 & 2.27 & 605.54 \\ 
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\end{document}
