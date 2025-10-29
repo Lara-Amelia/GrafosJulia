@@ -367,75 +367,16 @@ function obtemPrioridadePorGrau(matriz_adj, num_vertices, rev::Bool=false)
     return lista_prioridade
 end
 
-function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
-    num_vertices = size(matriz_adj, 1)
-    cores_vertices = zeros(Int, num_vertices)
-    cores_arestas_usadas = Set{Tuple{Int, Int}}()
-    
-    # Itera sobre os vértices na ordem de prioridade
-    for v_id in lista_prioridade
-        cor_candidata = 1
-        
-        while true
-            eh_valida = true
-
-            # Checa se a cor candidata é válida para todos os vizinhos
-            for neighbor_id in 1:num_vertices
-                if matriz_adj[v_id, neighbor_id] == 1
-                    cor_vizinho = cores_vertices[neighbor_id]
-                    
-                    # --- CHECK 1: "Proper Coloring" Rule ---
-                    if cor_candidata == cor_vizinho
-                        eh_valida = false
-                        break # Esta cor candidata é inválida
-                    end
-                    
-                    if cor_vizinho != 0
-                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
-                        
-                        # --- CHECK 2: Global Harmonic (H1) ---
-                        if novo_par_cores in cores_arestas_usadas
-                            eh_valida = false
-                            break # Sai do loop de vizinhos
-                        end
-                    end
-                end
-            end # Fim loop vizinhos
-            
-            # Se a cor candidata não gerou nenhum conflito, ela é a escolhida
-            if eh_valida
-                cores_vertices[v_id] = cor_candidata
-                
-                # Adiciona os novos pares de arestas ao conjunto de usados
-                for neighbor_id in 1:num_vertices
-                    if matriz_adj[v_id, neighbor_id] == 1
-                        cor_vizinho = cores_vertices[neighbor_id]
-                        if cor_vizinho != 0
-                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
-                            push!(cores_arestas_usadas, novo_par_cores)
-                        end
-                    end
-                end
-                break # Sai do loop while e passa para o próximo vértice
-            else
-                # Se não for válida, tenta a próxima cor
-                cor_candidata += 1
-            end
-        end # Fim loop while
-    end # Fim loop v_id
-    return cores_vertices
-end
-
 function coloracaoHarmonicaGrauMin!(matriz_adj)
     num_vertices = size(matriz_adj, 1)
     lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, false)
-    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 end
 
 function coloracaoHarmonicaGrauMax!(matriz_adj)
     num_vertices = size(matriz_adj, 1)
     lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, true)
-    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 end
 
 function coloracaoHarmonicaSaturacao!(matriz_adj)
@@ -482,7 +423,6 @@ function coloracaoHarmonicaSaturacao!(matriz_adj)
                 if matriz_adj[v_id, neighbor_id] == 1
                     cor_vizinho = cores_vertices[neighbor_id]
                     
-                    # --- CHECK 1: "Proper Coloring" Rule ---
                     if cor_candidata == cor_vizinho
                         eh_valida = false
                         break
@@ -491,14 +431,13 @@ function coloracaoHarmonicaSaturacao!(matriz_adj)
                     if cor_vizinho != 0
                         novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
                         
-                        # --- CHECK 2: Global Harmonic (H1) ---
                         if novo_par_cores in cores_arestas_usadas
                             eh_valida = false
                             break
                         end
                     end
                 end
-            end # Fim loop vizinhos
+            end 
             
             if eh_valida
                 cores_vertices[v_id] = cor_candidata
@@ -517,7 +456,7 @@ function coloracaoHarmonicaSaturacao!(matriz_adj)
             else
                 cor_candidata += 1
             end
-        end # Fim loop while
+        end
         
         for neighbor_id in 1:num_vertices
             if matriz_adj[v_id, neighbor_id] == 1 && cores_vertices[neighbor_id] == 0
