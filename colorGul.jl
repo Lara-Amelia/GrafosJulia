@@ -353,6 +353,234 @@ function coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
     return cores_vertices
 end
 
+# nova versão com checagem das cores de vizinhos de vizinhos também
+# tentar fazer com matriz de adjacencia, que deve ser mais eficiente
+# não permite usar cores iguais em vértices adjacentes
+function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int})
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices) 
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # itera sobre os vértices na ordem de prioridade
+    for v_id in lista_prioridade
+        cor_candidata = 1
+        
+        while true
+            eh_valida = true
+            
+            # checagem de conflitos (distâncias 1 e 2)
+            for vizinho_id in 1:num_vertices
+                if matriz_adj[v_id, vizinho_id] == 1
+                    cor_vizinho = cores_vertices[vizinho_id]
+                
+                    if cor_candidata == cor_vizinho && cor_vizinho != 0
+                        eh_valida = false
+                        break
+                    end
+                    
+                    # itera sobre os vizinhos do vizinho (distância 2)
+                    for vizinho_do_vizinho_id in 1:num_vertices
+                        if matriz_adj[vizinho_id, vizinho_do_vizinho_id] == 1 && vizinho_do_vizinho_id != v_id
+                            
+                            cor_vizinho_do_vizinho = cores_vertices[vizinho_do_vizinho_id]
+        
+                            if cor_candidata == cor_vizinho_do_vizinho && cor_vizinho_do_vizinho != 0
+                                eh_valida = false
+                                break
+                            end
+                        end
+                    end
+                end
+                if !eh_valida
+                    break # sai do loop de vizinhos se houver conflito em D1 ou D2
+                end
+            end
+            
+            # se houve conflito em D1 ou D2, tenta a próxima cor
+            if !eh_valida
+                cor_candidata += 1
+                continue 
+            end
+
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    if cor_vizinho != 0
+                        # cria o rótulo único da aresta
+                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                        
+                        # verifica se o rótulo já existe no Set
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break
+                        end
+                    end
+                end
+            end
+            
+            if eh_valida
+                cores_vertices[v_id] = cor_candidata # atribui a cor escolhida
+                
+                # adiciona os novos pares de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break # sai do loop while e passa para o próximo vértice
+            else
+                # se não for válida, tenta a próxima cor
+                cor_candidata += 1
+            end
+        end
+    end
+    
+    # verificação de duplicatas nos rotulos obtidos pelo algoritmo
+    # obter o número total de arestas
+    num_arestas_total = sum(matriz_adj) / 2
+    
+    # obter o número de pares de cores únicos
+    num_pares_unicos = length(cores_arestas_usadas)
+    
+    if num_pares_unicos != num_arestas_total
+        println("\n--- 🚨 ERRO NA COLORAÇÃO HARMÔNICA (VERIFICAÇÃO DE DUPLICATAS) 🚨 ---")
+        println("A restrição Harmônica foi violada: o número de pares de cores únicos ($num_pares_unicos) não é igual ao número total de arestas ($num_arestas_total).")
+        println("Isso indica que houve uma DUPLICATA de pares de cores de arestas.")
+    else
+        println("\n--- ✅ VERIFICAÇÃO HARMÔNICA OK ---")
+        println("Cada aresta possui um par de cores de vértices únicos. ($num_pares_unicos pares de cores únicos)")
+    end
+ 
+    return cores_vertices
+end
+
+function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
+    num_vertices = size(matriz_adj, 1)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # [CORREÇÃO]: saturation_degree agora representa o Grau Dinâmico (vizinhos não coloridos).
+    # O grau dinâmico é inicializado como o grau total.
+    saturation_degree = [sum(matriz_adj[v, :]) for v in 1:num_vertices]
+    degree_orig = copy(saturation_degree) # Usado para desempate
+    
+    for step in 1:num_vertices
+        
+        # 1. SELEÇÃO DO VÉRTICE (Critério: Maior Grau Dinâmico / Maior Grau Original)
+        best_v = -1
+        max_sat = -1
+        max_deg = -1
+        
+        for v in 1:num_vertices
+            if cores_vertices[v] == 0 
+                current_sat = saturation_degree[v]
+                current_deg = degree_orig[v]
+
+                if current_sat > max_sat
+                    max_sat = current_sat
+                    max_deg = current_deg
+                    best_v = v
+                elseif current_sat == max_sat && current_deg > max_deg
+                    max_deg = current_deg
+                    best_v = v
+                end
+            end
+        end
+        
+        v_id = best_v
+        
+        if v_id == -1
+            break 
+        end
+        
+        # 2. COLORAÇÃO GULOSA DO VÉRTICE SELECIONADO (v_id)
+        cor_candidata = 1
+        while true
+            eh_valida = true
+
+            # --- 2.1. CHECAGEM DE CONFLITO: DISTÂNCIA 2 ---
+            # (Mantido como solicitado, já que D1 está relaxado)
+            for vizinho_id in 1:num_vertices
+                if matriz_adj[v_id, vizinho_id] == 1 
+                    # Checagem de Distância 2 (Vizinhos de Vizinhos)
+                    for vizinho_do_vizinho_id in 1:num_vertices
+                        if matriz_adj[vizinho_id, vizinho_do_vizinho_id] == 1 && vizinho_do_vizinho_id != v_id
+                            
+                            cor_vizinho_do_vizinho = cores_vertices[vizinho_do_vizinho_id]
+                            
+                            # Restrição de Distância 2
+                            if cor_candidata == cor_vizinho_do_vizinho && cor_vizinho_do_vizinho != 0
+                                eh_valida = false
+                                break
+                            end
+                        end
+                    end
+                end
+                if !eh_valida
+                    break
+                end
+            end
+            
+            if !eh_valida
+                cor_candidata += 1
+                continue 
+            end
+
+            # --- 2.2. CHECAGEM DE CONFLITO: COLORAÇÃO HARMÔNICA (Pares de Arestas) ---
+            for neighbor_id in 1:num_vertices
+                if matriz_adj[v_id, neighbor_id] == 1
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    
+                    if cor_vizinho != 0
+                        novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                        
+                        if novo_par_cores in cores_arestas_usadas
+                            eh_valida = false
+                            break
+                        end
+                    end
+                end
+            end
+            
+            # --- 2.3. ATRIBUIÇÃO E ATUALIZAÇÃO ---
+            if eh_valida
+                cores_vertices[v_id] = cor_candidata
+                
+                # Adiciona os novos pares de arestas ao conjunto de usados
+                for neighbor_id in 1:num_vertices
+                    if matriz_adj[v_id, neighbor_id] == 1
+                        cor_vizinho = cores_vertices[neighbor_id]
+                        if cor_vizinho != 0
+                            novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            push!(cores_arestas_usadas, novo_par_cores)
+                        end
+                    end
+                end
+                break
+            else
+                cor_candidata += 1
+            end
+        end
+        
+        # 3. ATUALIZAÇÃO DO GRAU DINÂMICO DOS VIZINHOS
+        # [CORREÇÃO]: Diminui o grau dinâmico de todos os vizinhos do vértice recém-colorido.
+        for neighbor_id in 1:num_vertices
+            # A condição "cores_vertices[neighbor_id] == 0" não é estritamente necessária aqui, 
+            # mas é boa prática para otimização se o grau dinâmico dos vértices coloridos não for usado.
+            if matriz_adj[v_id, neighbor_id] == 1 
+                saturation_degree[neighbor_id] -= 1
+            end
+        end
+    end # Fim loop step
+    
+    return cores_vertices
+end
+
 function obtemPrioridadePorGrau(matriz_adj, num_vertices, rev::Bool=false)
     vertices = [infoVertice(i, 0, -1) for i in 1:num_vertices]
     
@@ -367,10 +595,11 @@ function obtemPrioridadePorGrau(matriz_adj, num_vertices, rev::Bool=false)
     return lista_prioridade
 end
 
+# checar questão de poder ou não colorir vértices adjacentes com a mesma cor
 function coloracaoHarmonicaGrauMin!(matriz_adj)
     num_vertices = size(matriz_adj, 1)
     lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, false)
-    return coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 end
 
 function coloracaoHarmonicaGrauMax!(matriz_adj)
