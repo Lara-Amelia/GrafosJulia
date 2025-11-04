@@ -226,7 +226,7 @@ function main()
     heuristics = Dict(
         :max_deg => coloracaoHarmonicaGrauMax!,
         :min_deg => coloracaoHarmonicaGrauMin!,
-        :sat_deg => coloracaoHarmonicaSaturacao!
+        :sat_deg => NOVOcoloracaoHarmonicaSaturacao!
     )
 
     # 2. Filtragem de Arquivos
