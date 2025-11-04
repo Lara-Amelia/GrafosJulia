@@ -275,7 +275,7 @@ function run_ga_experiment(file_name, k_limit, N_pop)
     function fitness_harmonious_coloring(individual::Vector{Float64})
         lista_prioridade = sortperm(individual, rev = true) 
         # Chamando a função de coloração gulosa com a lógica Harmônica/D2
-        cores_vertices = coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+        cores_vertices = NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
         return maximum(cores_vertices)
     end
     
