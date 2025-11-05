@@ -605,7 +605,7 @@ end
 function coloracaoHarmonicaGrauMax!(matriz_adj)
     num_vertices = size(matriz_adj, 1)
     lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, true)
-    return coloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 end
 
 function coloracaoHarmonicaSaturacao!(matriz_adj)
