@@ -1,4 +1,326 @@
-# Importa pacotes necessários
+# ===========================
+#   HARMONIOUS COLORING GA
+# ===========================
+
+# --- Load Packages ---
+using Metaheuristics
+using LinearAlgebra
+using Statistics
+using Printf
+
+# --- Load Graph Coloring Module (colorGul.jl) ---
+# Make sure colorGul.jl is located one directory up.
+include("../../colorGul.jl")
+
+# --- Global Variables ---
+global matriz_adj = Matrix{Int}(undef, 0, 0)
+global num_vertices = 0
+
+
+# ===========================
+#   Genetic Algorithm Setup
+# ===========================
+
+# Custom Parameters for GA
+mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
+    N::Int
+    p_crossover::Float64
+    p_mutation::Float64
+    stag_limit::Int
+    last_best::Float64
+    stag_iters::Int
+end
+
+# Constructor with defaults
+CustomGAParams(; N = 100, p_crossover = 0.5, p_mutation = 0.5,
+                 stag_limit = 50, last_best = Inf, stag_iters = 0) =
+    CustomGAParams(N, p_crossover, p_mutation, stag_limit, last_best, stag_iters)
+
+
+# --- Fitness Function ---
+function fitness_harmonious_coloring(individual::Vector{Float64})
+    lista_prioridade = sortperm(individual, rev = true)
+    global matriz_adj
+    cores_vertices = NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return float(maximum(cores_vertices))
+end
+
+# --- Mutation Operator ---
+function graph_swap_mutation!(x::Vector{Float64})
+    global matriz_adj
+    n = length(x)
+    if n < 2 return x end
+    
+    v1 = rand(1:n)
+    vizinhos = [i for i in 1:n if matriz_adj[v1, i] == 1]
+    if isempty(vizinhos)
+        return x
+    end
+    v2 = rand(vizinhos)
+    x[v1], x[v2] = x[v2], x[v1]
+    return x
+end
+
+
+# ===========================
+#   Metaheuristics Hooks
+# ===========================
+
+# Initialize!
+function Metaheuristics.initialize!(
+    status,
+    parameters::CustomGAParams,
+    problem::Metaheuristics.Problem,
+    information::Metaheuristics.Information,
+    options::Metaheuristics.Options
+)
+    initial_state = Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+    parameters.last_best = minimum([s.f for s in initial_state.population])
+    parameters.stag_iters = 0
+    return initial_state
+end
+
+
+# Update State!
+function Metaheuristics.update_state!(
+    state::Metaheuristics.State,
+    parameters::CustomGAParams,
+    problem::Metaheuristics.Problem,
+    information::Metaheuristics.Information,
+    options::Metaheuristics.Options
+)
+    # Tournament Selection
+    function tournament_select(pop)
+        k = 2
+        candidates = rand(pop, k)
+        return candidates[argmin([s.f for s in candidates])].x
+    end
+
+    p1 = tournament_select(state.population)
+    p2 = tournament_select(state.population)
+    parents = vcat(p1', p2')
+
+    p1_vec = parents[1, :]
+    p2_vec = parents[2, :]
+    child1 = (p1_vec .+ p2_vec) ./ 2.0
+    child2 = (p1_vec .+ p2_vec) ./ 2.0 .+ 0.05 .* randn(length(p1_vec))
+    offsprings = [child1'; child2']
+
+    for i in axes(offsprings, 1)
+        graph_swap_mutation!(offsprings[i, :])
+    end
+
+    offspring_solutions = Metaheuristics.xf_solution[]
+    for i in axes(offsprings, 1)
+        vec = offsprings[i, :]
+        fit = fitness_harmonious_coloring(vec)
+        push!(offspring_solutions, Metaheuristics.xf_solution(vec, fit))
+    end
+
+    # Elitism
+    best_ind_idx = findmin((s.f for s in state.population))[2]
+    best_ind = state.population[best_ind_idx]
+
+    current_pop = vcat(state.population, offspring_solutions)
+    sort!(current_pop, by = s -> s.f)
+    N = parameters.N
+    state.population = current_pop[1:min(N, length(current_pop))]
+
+    melhor_atual = state.population[1].f
+    if melhor_atual < parameters.last_best
+        parameters.last_best = melhor_atual
+        parameters.stag_iters = 0
+    else
+        parameters.stag_iters += 1
+    end
+
+    if parameters.stag_iters >= parameters.stag_limit
+        @info "Parada: $(parameters.stag_limit) iterações sem melhora"
+        return false
+    end
+    return true
+end
+
+function Metaheuristics.final_stage!(state, parameters::CustomGAParams, problem, information, options)
+    return state
+end
+
+
+# ===========================
+#   Running the Experiment
+# ===========================
+
+function run_ga_experiment(file_name::String, k_limit::Int, N_pop::Int)
+    global matriz_adj
+    global num_vertices
+
+    num_vertices, num_arestas = leInfo!(file_name)
+    matriz_adj = zeros(Int, num_vertices, num_vertices)
+    leArestas!(file_name, matriz_adj)
+
+    bounds = [zeros(num_vertices) ones(num_vertices)]'
+
+    opts = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = typemax(Int))
+    params = CustomGAParams(N = N_pop, p_crossover = 0.5, p_mutation = 0.5,
+                            stag_limit = k_limit, last_best = Inf, stag_iters = 0)
+
+    my_custom_ga = Metaheuristics.Algorithm(params, options = opts)
+    problem = Metaheuristics.Problem(fitness_harmonious_coloring, bounds)
+
+    start_time = time()
+    result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_custom_ga)
+    end_time = time()
+
+    time_taken = end_time - start_time
+    best_colors = Metaheuristics.minimum(result)
+
+    return time_taken, best_colors
+end
+
+
+# ===========================
+#   LaTeX Table Generation
+# ===========================
+
+function generate_latex_table(results, filepath)
+    latex_output = """
+\\documentclass[11pt,a4paper]{article}
+\\usepackage[margin=2cm]{geometry}
+\\usepackage{tabularx}
+\\usepackage{booktabs}
+\\usepackage{lscape}
+\\usepackage{siunitx}
+\\sisetup{round-mode = places,round-precision = 2}
+
+\\begin{document}
+\\begin{landscape}
+\\small
+\\begin{table}
+\\caption{Resultados da Coloração Harmônica (Média de 5 Execuções)}
+\\centering
+\\begin{tabularx}{\\linewidth}{l *{6}{>{\\centering\\arraybackslash}X}}
+\\toprule
+Instância & N & M & \$\\bar{\\chi}_h \\pm \\text{SE}\$ & \$\\bar{\\text{Tempo (s)}} \\pm \\sigma\$ \\\\
+\\midrule
+"""
+
+    for r in results
+        instance_id = "a$(r.a_param)\\_b$(r.b_param)\\_p$(r.p_param)\\%\\_v$(r.v_param)"
+        colors_fmt = @sprintf "\\num{%.2f} \\pm \\num{%.2f}" r.mean_colors r.std_err_colors
+        time_fmt = @sprintf "\\num{%.3f} \\pm \\num{%.3f}" r.mean_time r.std_time
+        latex_output *= @sprintf "%s & %d & %d & %s & %s \\\\\n" instance_id r.num_vertices r.num_arestas colors_fmt time_fmt
+    end
+
+    latex_output *= """
+\\bottomrule
+\\end{tabularx}
+\\end{table}
+\\end{landscape}
+\\end{document}
+"""
+    open(filepath, "w") do f
+        write(f, latex_output)
+    end
+end
+
+
+# ===========================
+#   Main Execution Function
+# ===========================
+
+function main()
+    N_REPETITIONS = 5
+    K_LIMIT = 50
+    N_POP = 200
+
+    all_bipartite_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
+    filtered_file_names = String[]
+
+    for file_name in all_bipartite_files
+        m = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+        if m === nothing continue end
+
+        a_param = parse(Int, m.captures[1])
+        b_param = parse(Int, m.captures[2])
+
+        if a_param <= 100 && b_param <= 100
+            push!(filtered_file_names, file_name)
+        end
+    end
+
+    if isempty(filtered_file_names)
+        println("Nenhum arquivo bipartido encontrado com a <= 100 e b <= 100.")
+        return
+    end
+
+    bipartite_results = []
+    num_files = length(filtered_file_names)
+
+    @printf "--- Starting GA Experiments (k=%d, N=%d, %d repetitions) ---\n" K_LIMIT N_POP N_REPETITIONS
+    @printf "Processing %d Bipartite files...\n" num_files
+
+    for (i, file_name) in enumerate(filtered_file_names)
+        colors = Float64[]
+        times = Float64[]
+
+        @printf "\nProcessing file (%d/%d): %s\n" i num_files file_name
+
+        for rep in 1:N_REPETITIONS
+            try
+                time_taken, best_colors = run_ga_experiment(file_name, K_LIMIT, N_POP)
+                push!(colors, best_colors)
+                push!(times, time_taken)
+                @printf "  Run %d/%d... Done. Colors: %.2f, Time: %.3fs\n" rep N_REPETITIONS best_colors time_taken
+            catch e
+                @printf "  Run %d/%d... ERROR: %s\n" rep N_REPETITIONS sprint(showerror, e)
+            end
+        end
+
+        if length(colors) < 2
+            println("Aviso: Menos de 2 execuções bem-sucedidas para $(file_name). Pulando.")
+            continue
+        end
+
+        mean_colors = mean(colors)
+        std_err_colors = std(colors) / sqrt(length(colors))
+        mean_time = mean(times)
+        std_err_time = std(times) / sqrt(length(times))
+
+        m = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+        num_vertices_curr, num_arestas_curr = leInfo!(file_name)
+
+        data = (
+            file_name = file_name,
+            a_param = parse(Int, m.captures[1]),
+            b_param = parse(Int, m.captures[2]),
+            p_param = parse(Int, m.captures[3]),
+            v_param = parse(Int, m.captures[4]),
+            num_vertices = num_vertices_curr,
+            num_arestas = num_arestas_curr,
+            mean_colors = mean_colors,
+            std_err_colors = std_err_colors,
+            mean_time = mean_time,
+            std_time = std_err_time,
+        )
+
+        @printf "\nRESULTS for %s:\n" file_name
+        @printf "  Mean Colors (\\bar{\\chi}_h): %.2f \\pm %.2f\n" mean_colors std_err_colors
+        @printf "  Mean Time (s): %.3f \\pm %.3f\n" mean_time std_err_time
+
+        push!(bipartite_results, data)
+    end
+
+    sort!(bipartite_results, by = r -> (r.a_param, r.b_param, r.p_param, r.v_param))
+    output_file = "results_Bipartite_a100_b100.tex"
+    generate_latex_table(bipartite_results, output_file)
+
+    println("\n--- LaTeX Table Generated ---")
+    println("Saved to $(output_file)")
+end
+
+main()
+
+#=# Importa pacotes necessários
 using Metaheuristics
 using LinearAlgebra
 using Statistics
@@ -17,14 +339,14 @@ global num_vertices = 0
 # --- ESTRUTURAS DO ALGORITMO GENÉTICO (GA) ---
 
 # Implementação do CustomGAParams (parâmetros do GA)
-mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
+#=mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     N::Int
     p_crossover::Float64
     p_mutation::Float64
     stag_limit::Int        
     last_best::Float64     # Alterado para Float64
     stag_iters::Int 
-end
+end=#
 
 # Construtor com valores padrão, usando 'k' (stag_limit) da função principal
 CustomGAParams(; N = 200, p_crossover = 0.5, p_mutation = 0.5, stag_limit = 50, 
@@ -374,4 +696,4 @@ function generate_latex_table(results, filepath)
 end
 
 # Executa a função principal quando o script é chamado
-main()
+main()=#
