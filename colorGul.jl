@@ -446,15 +446,17 @@ function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int}
     
     # obter o número de pares de cores únicos
     num_pares_unicos = length(cores_arestas_usadas)
-    
     if num_pares_unicos != num_arestas_total
+        # Se o número de pares únicos for menor que o número de arestas, o algoritmo falhou.
+        throw(ErrorException("FALHA HARMÔNICA FATAL: O algoritmo guloso não encontrou cores únicas para todas as arestas ou produziu uma solução errada ($num_pares_unicos/$num_arestas_total)"))
+    end
+    #=if num_pares_unicos != num_arestas_total
         println("\n--- 🚨 ERRO NA COLORAÇÃO HARMÔNICA (VERIFICAÇÃO DE DUPLICATAS) 🚨 ---")
         println("A restrição Harmônica foi violada: o número de pares de cores únicos ($num_pares_unicos) não é igual ao número total de arestas ($num_arestas_total).")
-        println("Isso indica que houve uma DUPLICATA de pares de cores de arestas.")
     else
         println("\n--- ✅ VERIFICAÇÃO HARMÔNICA OK ---")
         println("Cada aresta possui um par de cores de vértices únicos. ($num_pares_unicos pares de cores únicos)")
-    end
+    end=#
  
     return cores_vertices
 end

@@ -135,7 +135,7 @@ function Metaheuristics.update_state!(
     end
 
     if parameters.stag_iters >= parameters.stag_limit
-        @info "Parada: $(parameters.stag_limit) iterações sem melhora"
+        #@info "Parada: $(parameters.stag_limit) iterações sem melhora"
         return false
     end
     return true
