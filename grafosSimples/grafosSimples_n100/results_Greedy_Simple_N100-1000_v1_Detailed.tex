@@ -1,0 +1,77 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{longtable}
+
+\sisetup{round-mode = places, round-precision = 4, table-align-text-pre = false}
+
+\title{Resultados Detalhados das Heurísticas Gulosas - Grafos Simples (N: 100 - 1000, v1)}
+\author{Experimentos de Coloração Harmônica}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{longtable}{@{} l cc ccc ccc @{}}
+    \caption{Resultados Detalhados da Coloração Harmônica por Heurística (1 Execução)}\label{tab:greedy_detailed_simple}\\
+    \toprule
+    \multicolumn{3}{@{}l}{Parâmetros do Grafo} & \multicolumn{2}{c}{Grau Máximo} & \multicolumn{2}{c}{Grau Mínimo} & \multicolumn{2}{c @{}}{Saturação} \\
+    \cmidrule(lr){1-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+    Instância (N, p, v) & N & M & $\chi_h$ & Tempo (s) & $\chi_h$ & Tempo (s) & $\chi_h$ & Tempo (s) \\
+    \midrule
+    \endfirsthead
+
+    \toprule
+    Instância (N, p, v) & N & M & $\chi_h$ & Tempo (s) & $\chi_h$ & Tempo (s) & $\chi_h$ & Tempo (s) \\
+    \midrule
+    \endhead
+
+    \midrule
+    \multicolumn{9}{r}{\textit{Continua na próxima página}} \\
+    \bottomrule
+    \endfoot
+
+    \bottomrule
+    \endlastfoot
+n1000\_p1\%\_v1 & 1000 & 4972 & 169 & \num{3.6852} & 300 & \num{3.4820} & 209 & \num{4.3550} \\
+n1000\_p3\%\_v1 & 1000 & 15032 & 333 & \num{6.7152} & 387 & \num{8.3145} & 356 & \num{7.6229} \\
+n1000\_p5\%\_v1 & 1000 & 25093 & 507 & \num{14.0023} & 587 & \num{12.4101} & 536 & \num{12.3890} \\
+n1000\_p10\%\_v1 & 1000 & 50462 & 986 & \num{29.7046} & 986 & \num{27.2579} & 985 & \num{25.0663} \\
+n1000\_p20\%\_v1 & 1000 & 100166 & 1000 & \num{15.7121} & 1000 & \num{18.4749} & 1000 & \num{16.4531} \\
+n1000\_p30\%\_v1 & 1000 & 149824 & 1000 & \num{15.8924} & 1000 & \num{15.1561} & 1000 & \num{14.0012} \\
+n1000\_p40\%\_v1 & 1000 & 199724 & 1000 & \num{15.7827} & 1000 & \num{13.3995} & 1000 & \num{14.1122} \\
+n1000\_p50\%\_v1 & 1000 & 249890 & 1000 & \num{13.2029} & 1000 & \num{12.8426} & 1000 & \num{13.1477} \\
+n1000\_p60\%\_v1 & 1000 & 299535 & 1000 & \num{11.5409} & 1000 & \num{13.0059} & 1000 & \num{11.6790} \\
+n1000\_p70\%\_v1 & 1000 & 349750 & 1000 & \num{12.2663} & 1000 & \num{16.2925} & 1000 & \num{9.0194} \\
+n1000\_p80\%\_v1 & 1000 & 399441 & 1000 & \num{8.7594} & 1000 & \num{7.9994} & 1000 & \num{8.8106} \\
+n1000\_p90\%\_v1 & 1000 & 449228 & 1000 & \num{7.2463} & 1000 & \num{6.7798} & 1000 & \num{6.5692} \\
+n100\_p1\%\_v1 & 100 & 51 & 35 & \num{0.0004} & 28 & \num{0.0004} & 37 & \num{0.0004} \\
+n100\_p3\%\_v1 & 100 & 155 & 33 & \num{0.0008} & 34 & \num{0.0007} & 33 & \num{0.0007} \\
+n100\_p5\%\_v1 & 100 & 213 & 32 & \num{0.0013} & 37 & \num{0.0011} & 39 & \num{0.0012} \\
+n100\_p10\%\_v1 & 100 & 499 & 48 & \num{0.0023} & 56 & \num{0.0026} & 53 & \num{0.0028} \\
+n100\_p20\%\_v1 & 100 & 993 & 82 & \num{0.0049} & 85 & \num{0.0053} & 83 & \num{0.0042} \\
+n100\_p30\%\_v1 & 100 & 1444 & 100 & \num{0.0070} & 100 & \num{0.0086} & 100 & \num{0.0050} \\
+n100\_p40\%\_v1 & 100 & 1963 & 100 & \num{0.0065} & 100 & \num{0.0072} & 100 & \num{0.0056} \\
+n100\_p50\%\_v1 & 100 & 2528 & 100 & \num{0.0074} & 100 & \num{0.0072} & 100 & \num{0.0068} \\
+n100\_p60\%\_v1 & 100 & 2969 & 100 & \num{0.0081} & 100 & \num{0.0103} & 100 & \num{0.0064} \\
+n100\_p70\%\_v1 & 100 & 3482 & 100 & \num{0.0399} & 100 & \num{0.0075} & 100 & \num{0.0122} \\
+n100\_p80\%\_v1 & 100 & 3983 & 100 & \num{0.0058} & 100 & \num{0.0058} & 100 & \num{0.0071} \\
+n100\_p90\%\_v1 & 100 & 4487 & 100 & \num{0.0043} & 100 & \num{0.0047} & 100 & \num{0.0047} \\
+n500\_p1\%\_v1 & 500 & 1247 & 92 & \num{0.0806} & 178 & \num{0.1801} & 140 & \num{0.1269} \\
+n500\_p3\%\_v1 & 500 & 3630 & 132 & \num{0.3548} & 165 & \num{0.3883} & 151 & \num{0.3049} \\
+n500\_p5\%\_v1 & 500 & 6413 & 217 & \num{0.6678} & 248 & \num{0.6295} & 224 & \num{0.6357} \\
+n500\_p10\%\_v1 & 500 & 12548 & 401 & \num{1.5318} & 414 & \num{1.2641} & 405 & \num{1.4709} \\
+n500\_p20\%\_v1 & 500 & 25054 & 500 & \num{1.2355} & 500 & \num{1.3859} & 500 & \num{1.1214} \\
+n500\_p30\%\_v1 & 500 & 37350 & 500 & \num{1.1584} & 500 & \num{1.2679} & 500 & \num{1.0510} \\
+n500\_p40\%\_v1 & 500 & 49424 & 500 & \num{1.2205} & 500 & \num{1.3011} & 500 & \num{0.9880} \\
+n500\_p50\%\_v1 & 500 & 61956 & 500 & \num{1.2660} & 500 & \num{1.3722} & 500 & \num{0.9871} \\
+n500\_p60\%\_v1 & 500 & 74574 & 500 & \num{1.0871} & 500 & \num{1.1520} & 500 & \num{0.9171} \\
+n500\_p70\%\_v1 & 500 & 87094 & 500 & \num{0.9324} & 500 & \num{1.0198} & 500 & \num{0.7927} \\
+n500\_p80\%\_v1 & 500 & 99614 & 500 & \num{0.9640} & 500 & \num{0.8256} & 500 & \num{0.7122} \\
+n500\_p90\%\_v1 & 500 & 112458 & 500 & \num{0.6667} & 500 & \num{0.5766} & 500 & \num{0.6235} \\
+\end{longtable}
+
+\end{document}

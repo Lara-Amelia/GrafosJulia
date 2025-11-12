@@ -1,4 +1,4 @@
-# Importa pacotes necessários
+#=# Importa pacotes necessários
 using Metaheuristics
 using LinearAlgebra
 using Statistics
@@ -363,4 +363,282 @@ function generate_latex_table(results, filepath)
     end
 end
 # Executa a função principal quando o script é chamado
+main()=#
+
+using Metaheuristics
+using LinearAlgebra
+using Statistics
+using Printf
+
+include("../../colorGul.jl")
+
+# Variáveis globais
+global matriz_adj = Matrix{Int}(undef, 0, 0)
+global num_vertices = 0
+global num_arestas = 0
+
+mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
+    N::Int 
+    p_crossover::Float64
+    p_mutation::Float64
+    stag_limit::Int 
+    last_best::Float64
+    stag_iters::Int 
+end
+
+CustomGAParams(; N = 200, p_crossover = 0.5, p_mutation = 0.5, stag_limit = 50, 
+                 last_best = Inf, stag_iters = 0) =
+    CustomGAParams(N, p_crossover, p_mutation, stag_limit, last_best, stag_iters)
+
+function fitness_harmonious_coloring(individual::Vector{Float64})
+    lista_prioridade = sortperm(individual, rev = true)
+    global matriz_adj
+    cores_vertices = NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+    return float(maximum(cores_vertices)) 
+end
+
+function graph_swap_mutation!(x::Vector{Float64})
+    global matriz_adj
+    n = length(x)
+    if n < 2
+        return x
+    end
+    
+    v1 = rand(1:n)
+    vizinhos = [i for i in 1:n if matriz_adj[v1, i] == 1]
+    if isempty(vizinhos)
+        return x
+    end
+    v2 = rand(vizinhos)
+    x[v1], x[v2] = x[v2], x[v1]
+    return x
+end
+
+function Metaheuristics.initialize!(status, parameters::CustomGAParams, problem::Metaheuristics.Problem, information::Metaheuristics.Information, options::Metaheuristics.Options)
+    initial_state = Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+    parameters.last_best = minimum([s.f for s in initial_state.population])
+    parameters.stag_iters = 0
+    return initial_state
+end
+
+function Metaheuristics.update_state!(state::Metaheuristics.State, parameters::CustomGAParams, problem::Metaheuristics.Problem, information::Metaheuristics.Information, options::Metaheuristics.Options)
+    function tournament_select(pop, fitness_func)
+        k = 2
+        candidates = rand(pop, k)
+        candidate_vectors = [c.x for c in candidates]
+        fitnesses = [fitness_func(v) for v in candidate_vectors]
+        return candidates[argmin(fitnesses)].x
+    end
+
+    p1 = tournament_select(state.population, problem.f)
+    p2 = tournament_select(state.population, problem.f)
+    parents = vcat(p1', p2') 
+
+    child1 = (parents[1, :] .+ parents[2, :]) ./ 2.0
+    child2 = (parents[1, :] .+ parents[2, :]) ./ 2.0 .+ 0.05 .* randn(length(parents[1, :]))
+    offsprings = [child1'; child2']
+
+    offspring_solutions = Metaheuristics.xf_solution[]
+    for i in axes(offsprings, 1)
+        if rand() < parameters.p_mutation
+            graph_swap_mutation!(offsprings[i, :])
+        end
+        vec = offsprings[i, :]
+        fit = Float64(problem.f(vec))
+        push!(offspring_solutions, Metaheuristics.xf_solution(vec, fit))
+    end
+
+    all_solutions = vcat(state.population, offspring_solutions)
+    sort!(all_solutions, by = s -> s.f)
+    state.population = all_solutions[1:min(parameters.N, length(all_solutions))]
+
+    melhor_atual = minimum([s.f for s in state.population]) 
+    if melhor_atual < parameters.last_best
+        parameters.last_best = melhor_atual
+        parameters.stag_iters = 0
+    else
+        parameters.stag_iters += 1
+    end
+
+    if parameters.stag_iters >= parameters.stag_limit
+        #@info "Parada: $(parameters.stag_limit) iterações sem melhora"
+        return false
+    end
+
+    return true
+end
+
+function Metaheuristics.final_stage!(state, parameters::CustomGAParams, problem, information, options)
+    return state
+end
+
+function run_ga_experiment(file_name::String, k_limit::Int, N_pop::Int)
+    global matriz_adj
+    global num_vertices
+    
+    num_vertices, num_arestas = leInfo!(file_name)
+    matriz_adj = zeros(Int, num_vertices, num_vertices)
+    leArestas!(file_name, matriz_adj)
+    
+    bounds = [zeros(num_vertices) ones(num_vertices)]'
+    opts = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = typemax(Int))
+    params = CustomGAParams(N = N_pop, stag_limit = k_limit)
+    my_custom_ga = Metaheuristics.Algorithm(params, options = opts) 
+    
+    start_time = time()
+    result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_custom_ga)
+    end_time = time()
+    
+    time_taken = end_time - start_time
+    best_colors = Metaheuristics.minimum(result)
+    return time_taken, best_colors
+end
+
+function extract_simple_params(file_name)
+    match_result = match(r"simples_n(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+    if match_result !== nothing
+        return Dict(
+            :n_param => parse(Int, match_result.captures[1]),
+            :p_param => parse(Int, match_result.captures[2]),
+            :v_param => parse(Int, match_result.captures[3])
+        )
+    else
+        return nothing
+    end
+end
+
+function generate_latex_table(results_data, filename, N_LIMITS)
+    N_STR = join(N_LIMITS, ", ")
+    title = "Resultados do Algoritmo Genético - Grafos Simples (N=$N_STR, v1, 5 Reps)"
+    
+    latex_output = """
+\\documentclass[11pt,a4paper]{article}
+\\usepackage[a4paper,margin=1in]{geometry}
+\\usepackage{booktabs}
+\\usepackage{amsmath}
+\\usepackage{siunitx}
+
+\\sisetup{round-mode=places,round-precision=4,table-align-text-pre=false}
+
+\\title{$title}
+\\author{Experimentos de Coloração Harmônica (GA)}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+
+\\begin{table}[htbp]
+  raw"\\centering
+  \\caption{Desempenho do GA para Coloração Harmônica (N_{pop}=200, k=50\$, Média de 5 Repetições)}"
+
+  \\label{tab:ga_simple_results}
+  \\begin{tabular}{@{} l c S[table-format=6] S[table-format=3.2] S[table-format=1.4] S[table-format=1.4] @{}}
+    \\toprule
+    Instância & {N} & {M} & \$\\bar{\\chi}_h \\pm \\text{SE}\$ & {Tempo Médio (s)} & {SE Tempo (s)} \\\\
+    \\midrule
+"""
+    for r in results_data
+        instance_id = @sprintf("n%d\\_p%d\\%%\\_v%d", r[:n_param], r[:p_param], r[:v_param])
+        colors_fmt = @sprintf("%.0f \\pm %.2f", r[:mean_colors], r[:se_colors])
+        latex_output *= @sprintf("%s & %d & %d & {%s} & \\num{%.4f} & \\num{%.4f} \\\\\n",
+            instance_id, r[:num_vertices], r[:num_arestas], colors_fmt, r[:mean_time], r[:se_time])
+    end
+
+    latex_output *= """
+    \\bottomrule
+  \\end{tabular}
+\\end{table}
+\\end{document}
+"""
+
+    open(filename, "w") do f
+        write(f, latex_output)
+    end
+end
+
+function main()
+    N_LIMITS = [100, 500, 1000]
+    V_FILTER = 1
+    N_REPETITIONS = 5
+    K_LIMIT = 50
+    N_POP = 200
+
+    all_simple_files = filter(f -> startswith(f, "simples_") && endswith(f, ".col"), readdir())
+    filtered_file_names = String[]
+
+    for file_name in all_simple_files
+        m = match(r"simples_n(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+        if m === nothing
+            continue
+        end
+
+        n_param = parse(Int, m.captures[1])
+        v_param = parse(Int, m.captures[3])
+        if (n_param in N_LIMITS) && (v_param == V_FILTER)
+            push!(filtered_file_names, file_name)
+        end
+    end
+
+    if isempty(filtered_file_names)
+        N_STR = join(N_LIMITS, ", ")
+        @printf "AVISO: Nenhum arquivo Simples encontrado que satisfaça N={%s} e v=%d. Saindo.\n" N_STR, V_FILTER
+        return
+    end
+
+    sort!(filtered_file_names, by = f -> parse(Int, match(r"simples_n(\d+)", f).captures[1]))
+    simple_results = []
+
+    for (i, file_name) in enumerate(filtered_file_names)
+        colors = Float64[]
+        times = Float64[]
+        @printf "\nProcessing file (%d/%d): %s\n" i length(filtered_file_names) file_name
+
+        for rep in 1:N_REPETITIONS
+            try
+                time_taken, best_colors = run_ga_experiment(file_name, K_LIMIT, N_POP)
+                push!(colors, best_colors)
+                push!(times, time_taken)
+                @printf "  Run %d/%d... Done. Colors: %.2f, Time: %.3fs\n" rep N_REPETITIONS best_colors time_taken
+            catch e
+                @printf "  Run %d/%d... ERROR: %s\n" rep N_REPETITIONS sprint(showerror, e)
+            end
+        end
+
+        if isempty(colors)
+            println("AVISO: Nenhuma execução bem-sucedida para $(file_name). Pulando.")
+            continue
+        end
+
+        mean_colors = mean(colors)
+        std_time = std(times)
+        std_colors = std(colors)
+        se_colors = std_colors / sqrt(length(colors))
+        se_time = std_time / sqrt(length(times))
+        
+        data_params = extract_simple_params(file_name)
+        num_vertices_curr, num_arestas_curr = leInfo!(file_name)
+        
+        data = Dict(
+            :n_param => data_params[:n_param],
+            :p_param => data_params[:p_param],
+            :v_param => data_params[:v_param],
+            :num_vertices => num_vertices_curr,
+            :num_arestas => num_arestas_curr,
+            :mean_colors => mean_colors,
+            :se_colors => se_colors,
+            :mean_time => mean(times),
+            :se_time => se_time
+        )
+        push!(simple_results, data)
+    end
+    
+    sort!(simple_results, by = r -> (r[:n_param], r[:p_param], r[:v_param]))
+    N_FILE_STR = join(N_LIMITS, "-")
+    output_file = "results_GA_Simple_N$(N_FILE_STR)_v$(V_FILTER).tex"
+    generate_latex_table(simple_results, output_file, N_LIMITS)
+
+    println("\n--- Geração Finalizada ---")
+    println("LaTeX table saved to $(output_file)")
+end
+
 main()
