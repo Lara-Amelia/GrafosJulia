@@ -143,7 +143,7 @@ end
 #adicionamos o limite de iterações estagnadas (sem melhora do fitness)
 #falta adicionar os parametros para crossover e para swap com p elementos
 #após isso, poderemos escolher qual será usado e integrá-los à lógica do GA
-CustomGAParams(; N = 100, p_crossover = 0.5, p_mutation = 0.5, stag_limit = k, 
+CustomGAParams(; N = 1000, p_crossover = 0.5, p_mutation = 0.5, stag_limit = k, 
                  last_best = -1, stag_iters = 0) =
     CustomGAParams(N, p_crossover, p_mutation, stag_limit, last_best, stag_iters)
 
@@ -213,7 +213,6 @@ function Metaheuristics.update_state!(
     #troca os demais com a offspring produzida
     state.population = [best_ind; offspring_solutions[2:end]]
 
-
     #checa "estagnação"
     melhor_atual = minimum([s.f for s in state.population]) 
     if melhor_atual < parameters.last_best
@@ -271,6 +270,7 @@ melhor_individuo = Metaheuristics.minimizer(result)
 lista_prioridade = sortperm(melhor_individuo, rev = true)
 cores_vertices = NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 
+println(melhor_individuo)
 #println("\n--- Coloração harmônica final ---")
 #for i in 1:num_vertices
 #    println("Vértice $i: cor $(cores_vertices[i])")

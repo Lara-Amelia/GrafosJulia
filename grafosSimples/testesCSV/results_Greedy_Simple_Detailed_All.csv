@@ -1,0 +1,3 @@
+instancia,n,p,v,N,M,chi_sat,tempo_sat,chi_min,tempo_min,chi_max,tempo_max
+simples_n100_p20%_v3.col,100,20,3,100,923,79,0.896,83,0.0379,82,2.6858
+simples_n100_p20%_v5.col,100,20,5,100,975,83,0.0071,86,0.0093,82,0.0139
