@@ -2,7 +2,6 @@
 # algoritmo de coloração guloso - apenas não colocaremos a mesma cor para vértices adjacentes
 # são usadas no máximo num_vertices cores
 
-
 #println("rodando!!")
 #struct para auxiliar na coloração por graus
 mutable struct infoVertice
@@ -45,6 +44,7 @@ function leArestas!(nome_arquivo, matriz_adj)
     end
 end
 
+# métodos para coloração "comum" (vértices adjacentes com cores distintas)
 #coloração gulosa com prioridade sequencial (1, 2, 3, ...)
 function coloracao!(matriz_adj, cores_vertices, num_vertices)
 
@@ -80,7 +80,7 @@ end
 #também faremos uma coloração seguindo o grau máximo e o grau mínimo dos vértices
 #e uma coloração harmônica de fato
 
-#a função recebe um vetor 'prioridade' que define a ordem dos vértices a serem coloridos
+#a função recebe um vetor 'prioridade' que define a ordem em que os vértices serão coloridos
 function coloracaoPrioridade!(matriz_adj, cores_vertices, num_vertices, prioridade)
     #cores_disponíveis rastreia as cores que podem ser usadas para o vértice atual
     cores_disponiveis = Vector{Bool}(undef, num_vertices + 1)
@@ -202,6 +202,7 @@ function coloracaoGrauMin!(matriz_adj, vertices, num_vertices)
 end
 
 #provavelmente precisa de correções
+# versão inicial de algoritmo para coloração harmônica, sem ordem de prioridade definida 
 function coloracaoHarmonica!(matriz_adj, cores_vertices, num_vertices)
     cores_arestas_usadas = Set{Tuple{Int, Int}}()
 
@@ -447,17 +448,10 @@ function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int}
     # obter o número de pares de cores únicos
     num_pares_unicos = length(cores_arestas_usadas)
     if num_pares_unicos != num_arestas_total
-        # Se o número de pares únicos for menor que o número de arestas, o algoritmo falhou.
-        throw(ErrorException("FALHA HARMÔNICA FATAL: O algoritmo guloso não encontrou cores únicas para todas as arestas ou produziu uma solução errada ($num_pares_unicos/$num_arestas_total)"))
-    end
-    #=if num_pares_unicos != num_arestas_total
-        println("\n--- 🚨 ERRO NA COLORAÇÃO HARMÔNICA (VERIFICAÇÃO DE DUPLICATAS) 🚨 ---")
-        println("A restrição Harmônica foi violada: o número de pares de cores únicos ($num_pares_unicos) não é igual ao número total de arestas ($num_arestas_total).")
-    else
-        println("\n--- ✅ VERIFICAÇÃO HARMÔNICA OK ---")
-        println("Cada aresta possui um par de cores de vértices únicos. ($num_pares_unicos pares de cores únicos)")
-    end=#
- 
+        # Se o número de pares únicos for menor que o número de arestas, o algoritmo falhou.
+        throw(ErrorException("FALHA HARMÔNICA FATAL: O algoritmo guloso não encontrou cores únicas para todas as arestas ou produziu uma solução errada ($num_pares_unicos/$num_arestas_total)"))
+    end
+   
     return cores_vertices
 end
 
@@ -466,14 +460,13 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
     cores_vertices = zeros(Int, num_vertices)
     cores_arestas_usadas = Set{Tuple{Int, Int}}()
     
-    # [CORREÇÃO]: saturation_degree agora representa o Grau Dinâmico (vizinhos não coloridos).
-    # O grau dinâmico é inicializado como o grau total.
+    # grau de saturação corresponde ao número de vizinhos não coloridos de um vértice
     saturation_degree = [sum(matriz_adj[v, :]) for v in 1:num_vertices]
     degree_orig = copy(saturation_degree) # Usado para desempate
     
     for step in 1:num_vertices
         
-        # 1. SELEÇÃO DO VÉRTICE (Critério: Maior Grau Dinâmico / Maior Grau Original)
+        # seleção do vértice
         best_v = -1
         max_sat = -1
         max_deg = -1
@@ -495,37 +488,37 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
         end
         
         v_id = best_v
+        if v_id == -1 break end
         
-        if v_id == -1
-            break 
-        end
-        
-        # 2. COLORAÇÃO GULOSA DO VÉRTICE SELECIONADO (v_id)
+        # coloração gulosa do vértices selecionado (distâncias 1 e 2)
         cor_candidata = 1
         while true
             eh_valida = true
 
-            # --- 2.1. CHECAGEM DE CONFLITO: DISTÂNCIA 2 ---
-            # (Mantido como solicitado, já que D1 está relaxado)
+            # checagem de conflitos
             for vizinho_id in 1:num_vertices
                 if matriz_adj[v_id, vizinho_id] == 1 
-                    # Checagem de Distância 2 (Vizinhos de Vizinhos)
+                    cor_vizinho = cores_vertices[vizinho_id]
+
+                    # impede que vizinhos diretos tenham a mesma cor (restrição de dist. 1)
+                    if cor_candidata == cor_vizinho && cor_vizinho != 0
+                        eh_valida = false
+                        break
+                    end
+
+                    # checagem da restrição de distância 2
                     for vizinho_do_vizinho_id in 1:num_vertices
                         if matriz_adj[vizinho_id, vizinho_do_vizinho_id] == 1 && vizinho_do_vizinho_id != v_id
+                            cor_v_v = cores_vertices[vizinho_do_vizinho_id]
                             
-                            cor_vizinho_do_vizinho = cores_vertices[vizinho_do_vizinho_id]
-                            
-                            # Restrição de Distância 2
-                            if cor_candidata == cor_vizinho_do_vizinho && cor_vizinho_do_vizinho != 0
+                            if cor_candidata == cor_v_v && cor_v_v != 0
                                 eh_valida = false
                                 break
                             end
                         end
                     end
                 end
-                if !eh_valida
-                    break
-                end
+                if !eh_valida break end
             end
             
             if !eh_valida
@@ -533,7 +526,7 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
                 continue 
             end
 
-            # --- 2.2. CHECAGEM DE CONFLITO: COLORAÇÃO HARMÔNICA (Pares de Arestas) ---
+            # checagem final (se o par construído já existe ou não)
             for neighbor_id in 1:num_vertices
                 if matriz_adj[v_id, neighbor_id] == 1
                     cor_vizinho = cores_vertices[neighbor_id]
@@ -541,6 +534,7 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
                     if cor_vizinho != 0
                         novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
                         
+                        # Se este par de cores já existe em outra aresta do grafo
                         if novo_par_cores in cores_arestas_usadas
                             eh_valida = false
                             break
@@ -549,11 +543,11 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
                 end
             end
             
-            # --- 2.3. ATRIBUIÇÃO E ATUALIZAÇÃO ---
+            # atribuição e atualização do conjunto de rótulos de arestas
             if eh_valida
                 cores_vertices[v_id] = cor_candidata
                 
-                # Adiciona os novos pares de arestas ao conjunto de usados
+                # adiciona os novos pares de cores de arestas ao conjunto de usados
                 for neighbor_id in 1:num_vertices
                     if matriz_adj[v_id, neighbor_id] == 1
                         cor_vizinho = cores_vertices[neighbor_id]
@@ -569,16 +563,13 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
             end
         end
         
-        # 3. ATUALIZAÇÃO DO GRAU DINÂMICO DOS VIZINHOS
-        # [CORREÇÃO]: Diminui o grau dinâmico de todos os vizinhos do vértice recém-colorido.
+        # atualização do grau dinâmico dos vértices
         for neighbor_id in 1:num_vertices
-            # A condição "cores_vertices[neighbor_id] == 0" não é estritamente necessária aqui, 
-            # mas é boa prática para otimização se o grau dinâmico dos vértices coloridos não for usado.
             if matriz_adj[v_id, neighbor_id] == 1 
                 saturation_degree[neighbor_id] -= 1
             end
         end
-    end # Fim loop step
+    end 
     
     return cores_vertices
 end
@@ -697,6 +688,9 @@ function coloracaoHarmonicaSaturacao!(matriz_adj)
     end # Fim loop step
     return cores_vertices
 end
+
+# testagem preliminar de métodos/funcionamento das funções
+
 #println("Insira o nome do arquivo a ser lido: ")
 #nome_arquivo = readline()
 
