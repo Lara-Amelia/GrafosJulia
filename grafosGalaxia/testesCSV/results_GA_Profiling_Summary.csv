@@ -1,0 +1,3 @@
+instancia,a,b,c,v,N,M,mean_init_t,se_init_t,mean_upd_t,se_upd_t,mean_fit_t,se_fit_t,mean_sel_t,se_sel_t,mean_cross_t,se_cross_t,mean_mut_t,se_mut_t
+galaxy_a01_b10_c20_v1.col,1,10,20,1,19,18,0.09519,0.0784,0.0,0.0,0.01549,0.002,0.0,0.0,0.0,0.0,0.0,0.0
+galaxy_a05_b10_c50_v3.col,5,10,50,3,150,145,1.11261,0.0222,0.0,0.0,1.10956,0.0217,0.0,0.0,0.0,0.0,0.0,0.0

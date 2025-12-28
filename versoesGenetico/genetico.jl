@@ -2,7 +2,7 @@ using Metaheuristics
 using LinearAlgebra
 
 # Inclui o arquivo com as funções de coloração gulosa
-include("colorGul.jl")
+include("../colorGul.jl")
 
 # --- Leitura do grafo ---
 println("Insira o nome do arquivo a ser lido: ")

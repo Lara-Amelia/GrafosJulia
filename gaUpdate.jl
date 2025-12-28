@@ -3,8 +3,8 @@ using Metaheuristics
 using LinearAlgebra
 # base methods
 using Metaheuristics
-import Metaheuristics: initialize!, update_state!, final_stage!
-import Metaheuristics: AbstractParameters, gen_initial_state, Algorithm, get_position
+import Metaheuristics: initialize!, update_state!, final_stage!, gen_initial_state
+#import Metaheuristics: AbstractParameters, gen_initial_state, Algorithm, get_position
 # genetic operators
 import Metaheuristics: SBX_crossover, polynomial_mutation!, create_solution, is_better
 import Metaheuristics: reset_to_violated_bounds!
