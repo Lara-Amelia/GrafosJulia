@@ -2,8 +2,8 @@ using Statistics
 using Printf
 using DelimitedFiles
 using LinearAlgebra
-using DataFrames  # Essencial para organizar os dados em tabelas
-using CSV         # Essencial para exportar arquivos .csv
+using DataFrames  
+using CSV         
 
 # Inclui as funções de coloração (Busca no diretório pai)
 include("../../colorGul.jl")
@@ -32,8 +32,8 @@ function extract_bipartite_params(file_name)
 end
 
 """
-Executa uma heurística gulosa e mede o tempo.
-Retorna o número de cores usadas e o tempo de execução.
+executa uma abordagem gulosa e mede suas estatísticas
+Retorna o número de cores usadas e o tempo de execução
 """
 function run_greedy_experiment(file_name::String, heuristic::Function)
     global matriz_adj
@@ -71,22 +71,17 @@ function main()
         :sat_deg => NOVOcoloracaoHarmonicaSaturacao! 
     )
 
-    # 2. Coleta e filtragem (a <= 100, b <= 100)
+    # eliminação da restrição nos valores dos parâmetros
     all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
-    filtered_names = String[]
-
-    for file_name in all_files
-        m = extract_bipartite_params(file_name)
-        if m !== nothing && m[:a_param] <= 100 && m[:b_param] <= 100
-            push!(filtered_names, file_name)
-        end
-    end
+    
+    filtered_names = all_files
 
     if isempty(filtered_names)
-        println("AVISO: Nenhum arquivo bipartido encontrado para o filtro. Saindo.")
+        println("AVISO: Nenhum arquivo bipartido encontrado. Saindo.")
         return
     end
 
+    # ordenação por nome para execução organizada
     sort!(filtered_names)
     num_files = length(filtered_names)
     println("--- Starting Experiments: $num_files Bipartite files ---")
