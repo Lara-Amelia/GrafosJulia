@@ -166,8 +166,8 @@ function main()
     all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
     filtered_file_names = String[]
 
-    limite_a = 500
-    limite_b = 1000
+    #limite_a = 500
+    limite_b = 5000
 
     for file_name in all_files
         # Extrai os parâmetros do nome do arquivo via Regex
@@ -179,7 +179,7 @@ function main()
         b_param = parse(Int, m.captures[2])
 
         # Lógica de decisão para inclusão no experimento
-        if a_param > limite_a && b_param > limite_b
+        if #=a_param > limite_a &&=# b_param <= limite_b
             push!(filtered_file_names, file_name)
         end
     end
