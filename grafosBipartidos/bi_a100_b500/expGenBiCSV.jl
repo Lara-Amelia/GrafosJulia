@@ -162,9 +162,23 @@ function main()
     K_LIMIT = 50
     N_POP = 1000 
 
-    # 1. Filtro simplificado: removemos a restrição de tamanho <= 100
+    #=
     all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
     sort!(all_files)
+    =#
+
+    for file_name in all_bipartite_files
+        m = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+        if m === nothing continue end
+
+        a_param = parse(Int, m.captures[1])
+        b_param = parse(Int, m.captures[2])
+
+        # filtragem de parâmetros para arquivos de entrada
+        if a_param <= 500 && b_param <= 1000
+            push!(filtered_file_names, file_name)
+        end
+    end
 
     results_main = []
     results_prof = [] # Lista para o segundo CSV de profiling
