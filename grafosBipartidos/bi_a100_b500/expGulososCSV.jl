@@ -72,25 +72,46 @@ function main()
     )
 
     # eliminação da restrição nos valores dos parâmetros
-    all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
+    #=all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
     
-    filtered_names = all_files
+    filtered_names = all_files=#
 
-    if isempty(filtered_names)
+    all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
+    filtered_file_names = String[]
+
+    limite_a = 500
+    limite_b = 1000
+
+    for file_name in all_files
+        # Extrai os parâmetros do nome do arquivo via Regex
+        m = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+        if m === nothing continue end
+
+        # Converte as capturas para inteiros
+        a_param = parse(Int, m.captures[1])
+        b_param = parse(Int, m.captures[2])
+
+        # Lógica de decisão para inclusão no experimento
+        if a_param <= limite_a && b_param <= limite_b
+            push!(filtered_file_names, file_name)
+        end
+    end
+
+    if isempty(filtered_file_names)
         println("AVISO: Nenhum arquivo bipartido encontrado. Saindo.")
         return
     end
 
     # ordenação por nome para execução organizada
-    sort!(filtered_names)
-    num_files = length(filtered_names)
+    sort!(filtered_file_names)
+    num_files = length(filtered_file_names)
     println("--- Starting Experiments: $num_files Bipartite files ---")
 
     detailed_results = []
     summary_results = []
 
     # 3. Execução dos experimentos
-    for (i, file_name) in enumerate(filtered_names)
+    for (i, file_name) in enumerate(filtered_file_names)
         println("($i/$num_files) Processing $file_name...")
 
         # Coleta dimensões
