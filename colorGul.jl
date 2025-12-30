@@ -574,6 +574,179 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
     return cores_vertices
 end
 
+# leitura dos dados do arquivo de entrada e armazenamento do grafo como lista de adj.
+# para usa-lo primeiro usamos o método leInfo! (para obter a quantidade de vertices e arestas)
+# e instanciamos uma lista de adj. utilizando os dados obtidos
+function leArestasLista!(nome_arquivo, adj_list)
+    open(nome_arquivo, "r") do arquivo
+        for linha in eachline(arquivo)
+            linha = strip(linha)
+            if startswith(linha, "e")
+                partes = split(linha)
+                u = parse(Int, partes[2])
+                v = parse(Int, partes[3])
+                push!(adj_list[u], v) 
+                push!(adj_list[v], u) 
+            end
+        end
+    end
+end
+
+# função de coloração harmônica utilizando a mesma lógica desenvolvida anteriormente,
+# mas adaptada para grafo representado como lista ao invés de matriz de adjacência
+function coloracaoHarmonicaAdj!(adj_list::Vector{Vector{Int}}, lista_prioridade::Vector{Int})
+    num_vertices = length(adj_list)
+    cores_vertices = zeros(Int, num_vertices) 
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # nessa parte, verificaremos apenas a restrição de mesma cor para vértices adjacentes
+    for v_id in lista_prioridade
+        cor_candidata = 1
+        while true
+            eh_valida = true
+            
+            # checagem de distâncias 1 e 2 para o vértice na lista de prioridade considerado
+            for vizinho_id in adj_list[v_id]
+                # recupera a cor do vizinho atualizado na iteração
+                cor_vizinho = cores_vertices[vizinho_id]
+                
+                # checagem de distância 1
+                if cor_candidata == cor_vizinho && cor_vizinho != 0
+                    eh_valida = false
+                    break
+                end
+                
+                # checagem de distância 2 (itera sobre vizinhos do vizinho considerado)
+                # NOTA: ao entrar nesse loop já sabemos que a cor candidata pode ser aplicada ao vizinho a dist. 1
+                # agora verificaremos se quaisquer dos vizinhos desses vizinhos restringem o uso da cor ou não
+                for v_v_id in adj_list[vizinho_id]
+                    if v_v_id != v_id # se não é o prórpio vizinho
+                        cor_v_v = cores_vertices[v_v_id] # recupera a cor assigned até o momento
+                        if cor_candidata == cor_v_v && cor_v_v != 0
+                            eh_valida = false
+                            break
+                        end
+                    end
+                end
+                if !eh_valida 
+                    break 
+                end
+            end
+            
+            # se a cor não é válida, tentamos a seguinte
+            if !eh_valida
+                cor_candidata += 1
+                continue 
+            end
+
+            # checagem harmônica (se o par de cores escolhido é de fato único)
+            for neighbor_id in adj_list[v_id]
+                cor_vizinho = cores_vertices[neighbor_id]
+                if cor_vizinho != 0
+                    # para que seja tratado como um par ordenado
+                    novo_par = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                    if novo_par in cores_arestas_usadas
+                        eh_valida = false
+                        break
+                    end
+                end
+            end
+            
+            # se o novo par gerado não viola a restrição harmônica
+            if eh_valida
+                # atribuição da cor
+                cores_vertices[v_id] = cor_candidata
+                # inclusão do par/rótulo da aresta correspondente ao Set utilizado
+                for neighbor_id in adj_list[v_id]
+                    cor_vizinho = cores_vertices[neighbor_id]
+                    if cor_vizinho != 0
+                        push!(cores_arestas_usadas, (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho)))
+                    end
+                end
+                break
+            else
+                cor_candidata += 1
+            end
+        end
+    end
+    return cores_vertices
+end
+
+# nesse caso utilizamos uma estratégia possivelmente mais eficiente: percorremos os vizinhos e vizinhos de 
+# vizinhos uma só vez marcando suas cores como proibidas; em seguida, utilizamos as cores marcadas
+# como livres para fazer a checagem e atribuição harmônicas
+function coloracaoHarmonicaAdjVetAux!(adj_list::Vector{Vector{Int}}, lista_prioridade::Vector{Int})
+    num_vertices = length(adj_list)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # vetor de disponibilidade + registro de modificações (otimizar o reset do vetor)
+    cor_disponivel = fill(true, num_vertices + 1)
+    modificados = Int[] # armazena os índices que foram marcados como false
+    sizehint!(modificados, 100) # Pre-aloca espaço para evitar realocações
+    # NÃO QUEREMOS FAZER COM REALOCAÇÃO
+
+    for v_id in lista_prioridade
+        # reset otimizado (ao invés de usar fill!, que seria mais lento)
+        for idx in modificados
+            cor_disponivel[idx] = true
+        end
+        empty!(modificados) 
+
+        # checagem de distâncias 1 e 2 (cores de vértices adjacentes distintas)
+        for vizinho_id in adj_list[v_id]
+            c1 = cores_vertices[vizinho_id]
+            if c1 != 0 && cor_disponivel[c1]
+                cor_disponivel[c1] = false
+                push!(modificados, c1)
+            end
+            
+            for v_v_id in adj_list[vizinho_id]
+                c2 = cores_vertices[v_v_id]
+                if c2 != 0 && cor_disponivel[c2]
+                    cor_disponivel[c2] = false
+                    push!(modificados, c2)
+                end
+            end
+        end
+
+        # checagem da restrição harmônica da coloração
+        cor_escolhida = 0
+        # o número máximo de cores na coloração é o numero de vertices no grafo
+        # percorremos as cores não proibidas na primeira parte e checaremos se podem formar
+        # um rótulo de aresta válido considerando a restrição harmônica (paramos assim que encontrar)
+        for c in 1:num_vertices
+            if cor_disponivel[c]
+                eh_harmonica = true
+                for vizinho_id in adj_list[v_id]
+                    cv = cores_vertices[vizinho_id]
+                    if cv != 0
+                        if (min(c, cv), max(c, cv)) in cores_arestas_usadas
+                            eh_harmonica = false
+                            break
+                        end
+                    end
+                end
+
+                if eh_harmonica
+                    cor_escolhida = c
+                    break
+                end
+            end
+        end
+
+        # assim que encontramos um rótulo válido, atualizamos o set e as cores dos vértices
+        cores_vertices[v_id] = cor_escolhida
+        for vizinho_id in adj_list[v_id]
+            cv = cores_vertices[vizinho_id]
+            if cv != 0
+                push!(cores_arestas_usadas, (min(cor_escolhida, cv), max(cor_escolhida, cv)))
+            end
+        end
+    end
+    return cores_vertices
+end
+
 function obtemPrioridadePorGrau(matriz_adj, num_vertices, rev::Bool=false)
     vertices = [infoVertice(i, 0, -1) for i in 1:num_vertices]
     
