@@ -35,7 +35,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     stag_iters::Int 
 end
 
-CustomGAParams(; N = 1000, p_crossover = 0.5, p_mutation = 0.5, stag_limit = 50, 
+CustomGAParams(; N = 200, p_crossover = 0.5, p_mutation = 0.5, stag_limit = 50, 
                   last_best = -1, stag_iters = 0) =
     CustomGAParams(N, p_crossover, p_mutation, stag_limit, last_best, stag_iters)
 
