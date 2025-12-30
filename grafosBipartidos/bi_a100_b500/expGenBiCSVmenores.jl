@@ -191,7 +191,7 @@ function main()
 
     # 2. Progress bar e logs de processamento
     @showprogress 1 "Processando: " for (idx, file) in enumerate(filtered_file_names)
-        println("\n[$idx/$(length(all_files))] Processing: $file")
+        println("\n[$idx/$(length(filtered_file_names))] Processing: $file")
         
         t_tot, chi = Float64[], Int[]
         t_fit, t_cross, t_mut, t_sel, t_init, t_upd = Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
