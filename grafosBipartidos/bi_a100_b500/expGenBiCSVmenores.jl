@@ -40,7 +40,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
 end 
 
 # Construtor
-CustomGAParams(; N = 1000, p_crossover = 0.5, p_mutation = 0.5,
+CustomGAParams(; N = 200, p_crossover = 0.5, p_mutation = 0.5,
                  stag_limit = 50, last_best = Inf, stag_iters = 0) =
     CustomGAParams(N, p_crossover, p_mutation, stag_limit, last_best, stag_iters)
 
@@ -160,7 +160,7 @@ end
 function main()
     N_REPETITIONS = 5
     K_LIMIT = 50
-    N_POP = 1000 
+    N_POP = 200 
 
     # 1. Coleta todos os arquivos bipartidos na pasta
     all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
