@@ -12,11 +12,6 @@ global matriz_adj = Matrix{Int}(undef, 0, 0)
 global num_vertices = 0
 global num_arestas = 0
 
-# --- FUNÇÕES AUXILIARES DE LEITURA (Assumidas no arquivo pai) ---
-
-# Implementação de 'leInfo!' e 'leArestas!' assumidas no ../colorGul.jl
-# e a função 'coloracaoHarmonicaSaturacao!' e suas variantes também.
-
 function extract_bipartite_params(file_name)
     match_result = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
     

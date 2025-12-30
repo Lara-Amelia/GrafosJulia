@@ -243,7 +243,8 @@ function main()
         a_param = parse(Int, m.captures[1])
         b_param = parse(Int, m.captures[2])
 
-        if a_param <= 100 && b_param <= 100
+        # filtragem de parâmetros para arquivos de entrada
+        if a_param <= 500 && b_param <= 1000
             push!(filtered_file_names, file_name)
         end
     end
