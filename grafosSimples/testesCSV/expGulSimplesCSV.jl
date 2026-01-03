@@ -2,8 +2,8 @@ using Statistics
 using Printf
 using DelimitedFiles
 using LinearAlgebra 
-using DataFrames  #
-using CSV         #
+using DataFrames  
+using CSV         
 
 # Inclui as funções de coloração (Busca no diretório pai)
 include("../../colorGul.jl") 
