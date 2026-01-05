@@ -429,6 +429,7 @@ function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int}
                         cor_vizinho = cores_vertices[neighbor_id]
                         if cor_vizinho != 0
                             novo_par_cores = (min(cor_candidata, cor_vizinho), max(cor_candidata, cor_vizinho))
+                            println("PAR ADICIONADO: ($(min(cor_candidata, cor_vizinho)), $(max(cor_candidata, cor_vizinho))), para a aresta ($v_id, $neighbor_id)")
                             push!(cores_arestas_usadas, novo_par_cores)
                         end
                     end
@@ -447,11 +448,19 @@ function NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade::Vector{Int}
     
     # obter o número de pares de cores únicos
     num_pares_unicos = length(cores_arestas_usadas)
+    println("nro. de pares unicos = $num_pares_unicos")
+    println("nro. arestas = $num_arestas_total")
     if num_pares_unicos != num_arestas_total
         # Se o número de pares únicos for menor que o número de arestas, o algoritmo falhou.
         throw(ErrorException("FALHA HARMÔNICA FATAL: O algoritmo guloso não encontrou cores únicas para todas as arestas ou produziu uma solução errada ($num_pares_unicos/$num_arestas_total)"))
     end
-   
+    # FAZER UMA VERSÃO COM MATRIZ DE ADJACÊNCIA, SÓ PARA TESTAR
+    eh_valida = validarHarmonica(matriz_adj, cores_vertices)
+    if eh_valida
+        println("Coloração Harmônica proposta é VÁLIDA")
+    else
+        println("Colração Harmônica proposta é INVÁLIDA")
+    end
     return cores_vertices
 end
 
@@ -571,6 +580,13 @@ function NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
         end
     end 
     
+    eh_valida = validarHarmonica(matriz_adj, cores_vertices)
+    if eh_valida
+        println("Coloração Harmônica proposta é VÁLIDA")
+    else
+        println("Coloração Harmônica proposta é INVÁLIDA")
+    end
+
     return cores_vertices
 end
 
@@ -590,6 +606,81 @@ function leArestasLista!(nome_arquivo, adj_list)
             end
         end
     end
+end
+
+# implementação de uma versão que recebe matriz de adjacência como argumento,
+# aplicando princípios de polimorfismo
+function validarHarmonica(adj_mat::Matrix{Int64}, cores::Vector{Int})
+    num_vertices = size(adj_mat, 1)
+    arestas_coloridas = Set{Tuple{Int, Int}}()
+
+    @assert size(adj_mat, 2) == num_vertices
+    @assert length(cores) == num_vertices
+
+    for u in 1:num_vertices
+        cor_u = cores[u]
+
+        # todos os vértices devem ter sido atribuídos a alguma cor
+        if cor_u == 0
+            return false
+        end
+
+        for v in (u+1):num_vertices   # percorre apenas u < v
+            if adj_mat[u, v] == 0
+                continue
+            end
+
+            cor_v = cores[v]
+
+            # coloração própria
+            if cor_u == cor_v
+                return false
+            end
+
+            # restrição harmônica
+            par = (min(cor_u, cor_v), max(cor_u, cor_v))
+            if par in arestas_coloridas
+                return false
+            end
+
+            push!(arestas_coloridas, par)
+        end
+    end
+
+    return true
+end
+
+
+# verificador de coloração harmônica (atesta que é válida)
+# (não utilizaremos sempre porque adicionaria muito custo a cada run do guloso,
+# mas é útil tê-la disponível)
+function validarHarmonica(adj_list::Vector{Vector{Int}}, cores::Vector{Int})
+    num_vertices = length(adj_list)
+    arestas_coloridas = Set{Tuple{Int, Int}}()
+
+    for u in 1:num_vertices
+        cor_u = cores[u]
+        # todos os vértices devem ter sido atribuídos a alguma cor
+        if cor_u == 0 return false end 
+        
+        for v in adj_list[u]
+            cor_v = cores[v]
+            # coloração própria
+            if cor_u == cor_v return false end
+            
+            # restrição harmônica
+            # alternativamente podemos checra se o tamanho do set com 
+            # pares de cores é exatamente o número de arestas no grafo
+            par = (min(cor_u, cor_v), max(cor_u, cor_v))
+            if u < v # evita checar a mesma aresta duas vezes
+                if par in arestas_coloridas
+                    return false
+                end
+                push!(arestas_coloridas, par)
+            end
+        end
+    end
+    return true
 end
 
 # função de coloração harmônica utilizando a mesma lógica desenvolvida anteriormente,
@@ -669,6 +760,12 @@ function coloracaoHarmonicaAdj!(adj_list::Vector{Vector{Int}}, lista_prioridade:
             end
         end
     end
+    # verifica se a quantidade de pares obtidos é o número de arestas no grafo
+    # (i.e., cada aresta é identificada por um par único)
+    num_arestas_grafo = sum(length.(adj_list)) ÷ 2
+    if length(cores_arestas_usadas) != num_arestas_grafo
+        error("Erro: violação da restrição harmônica na coloração")
+    end
     return cores_vertices
 end
 
@@ -741,9 +838,25 @@ function coloracaoHarmonicaAdjVetAux!(adj_list::Vector{Vector{Int}}, lista_prior
             cv = cores_vertices[vizinho_id]
             if cv != 0
                 push!(cores_arestas_usadas, (min(cor_escolhida, cv), max(cor_escolhida, cv)))
+                println("PAR ADICIONADO: ($(min(cor_escolhida, cv)), $(max(cor_escolhida, cv))), para a aresta ($v_id, $vizinho_id)")
             end
         end
     end
+    # verificação da validade da coloração (nro. de pares de cores = nro. de arestas)
+    num_arestas_grafo = sum(length.(adj_list)) ÷ 2
+    pares_unicos = length(cores_arestas_usadas)
+    println("nro. de arestas verificação = $num_arestas_grafo")
+    println("nro. de pares no set = $pares_unicos")
+    if length(cores_arestas_usadas) != num_arestas_grafo
+        error("Erro: violação da restrição harmônica na coloração (tamanhos !='s)")
+    end
+    eh_valida = validarHarmonica(adj_list, cores_vertices)
+    if eh_valida
+        println("Coloração Harmônica proposta é VÁLIDA")
+    else
+        println("Coloração Harmônica proposta é INVÁLIDA")
+    end
+
     return cores_vertices
 end
 
@@ -772,6 +885,144 @@ function coloracaoHarmonicaGrauMax!(matriz_adj)
     num_vertices = size(matriz_adj, 1)
     lista_prioridade = obtemPrioridadePorGrau(matriz_adj, num_vertices, true)
     return NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
+end
+
+# método para obter a lista de prioridade por diferentes graus 
+# dessa vez recebe a lista de adjacência como argumento
+function obtemPrioridadePorGrauAdj(adj_list::Vector{Vector{Int}}, rev::Bool=false)
+    num_vertices = length(adj_list)
+    vertices = [infoVertice(i, length(adj_list[i]), -1) for i in 1:num_vertices]
+    
+    sort!(vertices, by = v -> v.grau, rev = rev)
+    return [v.id for v in vertices]
+end
+
+# guloso utilizando prioridade por grau máximo e método com lista de adjacência
+function coloracaoHarmonicaGrauMinAdj!(adj_list::Vector{Vector{Int}})
+    lista_prioridade = obtemPrioridadePorGrauAdj(adj_list, false)
+    return coloracaoHarmonicaAdjVetAux!(adj_list, lista_prioridade)
+end
+
+# guloso utilizando prioridade por grau mínimo e método com lista de adjacência
+function coloracaoHarmonicaGrauMaxAdj!(adj_list::Vector{Vector{Int}})
+    lista_prioridade = obtemPrioridadePorGrauAdj(adj_list, true)
+    return coloracaoHarmonicaAdjVetAux!(adj_list, lista_prioridade)
+end
+
+# guloso utilizando prioridade por grau de saturação (quantidade de vizinhos não coloridos)
+# e método com lista de adjacência
+function coloracaoHarmonicaSaturacaoAdj!(adj_list::Vector{Vector{Int}})
+    num_vertices = length(adj_list)
+    cores_vertices = zeros(Int, num_vertices)
+    cores_arestas_usadas = Set{Tuple{Int, Int}}()
+    
+    # sat_degree = nro. de vizinhos não coloridos do vértice
+    sat_degree = [length(adj_list[v]) for v in 1:num_vertices]
+    degree_orig = copy(sat_degree) 
+    
+    # estruturas auxiliares para otimizar escolha de cor
+    cor_disponivel = fill(true, num_vertices + 1)
+    modificados = Int[]
+    sizehint!(modificados, 100)
+
+    for step in 1:num_vertices
+        # seleção do vértice via grau de saturação (sempre o de maior sat_degree)
+        best_v = -1
+        max_sat = -1
+        max_deg = -1
+        
+        for v in 1:num_vertices
+            if cores_vertices[v] == 0 # se ainda não colorimos o vértice em questão
+                if sat_degree[v] > max_sat
+                    max_sat = sat_degree[v]
+                    max_deg = degree_orig[v]
+                    best_v = v
+                elseif sat_degree[v] == max_sat && degree_orig[v] > max_deg
+                    max_deg = degree_orig[v]
+                    best_v = v
+                end
+            end
+        end
+        
+        # coloração finalizada (sem atualizações)
+        if best_v == -1 
+            break 
+        end
+
+        # vértice que iremos colorir nessa iteração
+        v_id = best_v
+
+        # limpeza e preparação do vetor de cores disponíveis
+        for idx in modificados
+            cor_disponivel[idx] = true
+        end
+        empty!(modificados)
+
+        # restrições de distâncias 1 e 2 
+        for vizinho_id in adj_list[v_id]
+            c1 = cores_vertices[vizinho_id]
+            if c1 != 0 && cor_disponivel[c1]
+                cor_disponivel[c1] = false
+                push!(modificados, c1)
+            end
+            for v_v_id in adj_list[vizinho_id]
+                c2 = cores_vertices[v_v_id]
+                if c2 != 0 && cor_disponivel[c2]
+                    cor_disponivel[c2] = false
+                    push!(modificados, c2)
+                end
+            end
+        end
+
+        # restrição harmônica e seleção da cor
+        cor_escolhida = 0
+        for c in 1:num_vertices
+            if cor_disponivel[c]
+                eh_harmonica = true
+                for vizinho_id in adj_list[v_id]
+                    cv = cores_vertices[vizinho_id]
+                    if cv != 0
+                        if (min(c, cv), max(c, cv)) in cores_arestas_usadas
+                            eh_harmonica = false
+                            break
+                        end
+                    end
+                end
+                
+                if eh_harmonica
+                    cor_escolhida = c
+                    break
+                end
+            end
+        end
+
+        # atribuição e atualização do set de arestas
+        cores_vertices[v_id] = cor_escolhida
+        for vizinho_id in adj_list[v_id]
+            cv = cores_vertices[vizinho_id]
+            if cv != 0
+                push!(cores_arestas_usadas, (min(cor_escolhida, cv), max(cor_escolhida, cv)))
+            end
+            # atualização da saturação dos vizinhos do vértice que acabamos de colorir
+            sat_degree[vizinho_id] -= 1
+        end
+    end
+
+    # verificação da validade da coloração (tamanho do set e quantidade de arestas)
+    num_arestas_grafo = sum(length.(adj_list)) ÷ 2
+    println("nro. de arestas verificação = $num_arestas_grafo")
+    if length(cores_arestas_usadas) != num_arestas_grafo
+        error("Erro: violação da restrição harmônica na coloração")
+    end
+    
+    eh_valida = validarHarmonica(adj_list, cores_vertices)
+    if eh_valida
+        println("Coloração Harmônica proposta é VÁLIDA")
+    else
+        println("Coloração Harmônica proposta é INVÁLIDA")
+    end
+
+    return cores_vertices
 end
 
 function coloracaoHarmonicaSaturacao!(matriz_adj)
@@ -853,25 +1104,26 @@ function coloracaoHarmonicaSaturacao!(matriz_adj)
             end
         end
         
+        # atualização dos graus dos vértices afetados (vizinhos do colorido)
         for neighbor_id in 1:num_vertices
             if matriz_adj[v_id, neighbor_id] == 1 && cores_vertices[neighbor_id] == 0
                 saturation_degree[neighbor_id] -= 1
             end
         end
-    end # Fim loop step
+    end 
     return cores_vertices
 end
 
 # testagem preliminar de métodos/funcionamento das funções
 
-#println("Insira o nome do arquivo a ser lido: ")
-#nome_arquivo = readline()
+#=println("Insira o nome do arquivo a ser lido: ")
+nome_arquivo = readline()
 
-#num_vertices, num_arestas = leInfo!(nome_arquivo)
-#println("nro de vertices: $num_vertices")
-#println("nro de arestas: $num_arestas")
+num_vertices, num_arestas = leInfo!(nome_arquivo)
+println("nro de vertices: $num_vertices")
+println("nro de arestas: $num_arestas")
 
-#=matriz_adj = zeros(Int, num_vertices, num_vertices)
+matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
 
 #1. Coloração Gulosa Sequencial (1, 2, 3...)
@@ -888,26 +1140,37 @@ println("O número total de cores usado foi: $nro_cores_seq")
 #colorações, para evitar uso de memória para fins redundantes
 # 2. Coloração por Grau Máximo
 #inicialização do vetor de structs infoVertice
+println("FAZENDO: coloração harmônica por grau MAX, sem lista de adjacência")
 vertices_grau_max = [infoVertice(i, 0, -1) for i in 1:num_vertices]
 #preenche o vetor com os graus
 obtemGrauVertice!(matriz_adj, vertices_grau_max, num_vertices)
 #realiza a coloração em si
-cores_grau_max = coloracaoGrauMax!(matriz_adj, vertices_grau_max, num_vertices)
+#cores_grau_max = coloracaoGrauMax!(matriz_adj, vertices_grau_max, num_vertices)
+cores_grau_max = coloracaoHarmonicaGrauMax!(matriz_adj)
 nro_cores_max = maximum(cores_grau_max)
 println("\n--- Coloração por Grau Máximo ---")
 println("O número total de cores usado foi: $nro_cores_max")
 
-# 3. Coloração por Grau Mínimo
-#mesmo processo do realizado para obter a coloração por grau máximo
-#(criar o vetor, popular, etc)
+# 3. Coloração por Grau de Saturação
+println("FAZENDO: coloração harmônica por grau SATUR, sem lista de adj.")
+cores_grau_satur = NOVOcoloracaoHarmonicaSaturacao!(matriz_adj)
+nro_cores_satur = maximum(cores_grau_satur)
+println("\n--- Coloração por Grau de Saturação ---")
+println("O número total de cores usado foi: $nro_cores_satur")
+
+# 4. Coloração por Grau Mínimo
+# mesmo processo do realizado para obter a coloração por grau máximo
+# (criar o vetor, popular, etc)
+println("FAZENDO: coloração harmônica por grau MIN, sem lista de adj.")
 vertices_grau_min = [infoVertice(i, 0, -1) for i in 1:num_vertices]
 obtemGrauVertice!(matriz_adj, vertices_grau_min, num_vertices)
-cores_grau_min = coloracaoGrauMin!(matriz_adj, vertices_grau_min, num_vertices)
+#cores_grau_min = coloracaoGrauMin!(matriz_adj, vertices_grau_min, num_vertices)
+cores_grau_min = coloracaoHarmonicaGrauMin!(matriz_adj)
 nro_cores_min = maximum(cores_grau_min)
 println("\n--- Coloração por Grau Mínimo ---")
 println("O número total de cores usado foi: $nro_cores_min")
 
-#4. Coloração harmônica
+#5. Coloração harmônica
 cores_aresta_distinguivel = fill(-1, num_vertices)
 coloracaoHarmonica!(matriz_adj, cores_aresta_distinguivel, num_vertices)
 nro_cores_aresta_dist = maximum(cores_aresta_distinguivel)
@@ -915,4 +1178,38 @@ println("\n--- Coloração Distinguível por Arestas ---")
 for i in 1:num_vertices
     println("cor usada pelo vertice $i: $(cores_aresta_distinguivel[i])")
 end
-println("O número total de cores usado foi: $nro_cores_aresta_dist") =#
+println("O número total de cores usado foi: $nro_cores_aresta_dist") 
+
+# 6. Colorações com métodos por lista de adjacência
+# cria e popula a lista de adjacência que será utilizada nos testes
+lista_adj = [Int[] for _ in 1:num_vertices]
+leArestasLista!(nome_arquivo, lista_adj)
+
+# 6.2 Coloração Harmônica por Grau Mínimo (Lista de Adjacência)
+println("\nExecutando: Harmônica por Grau Mínimo (Adj)...")
+@time cores_harm_min = coloracaoHarmonicaGrauMinAdj!(lista_adj)
+nro_cores_min = maximum(cores_harm_min)
+println("--- Coloração Harmônica (Grau Mínimo) ---")
+println("O número total de cores usado foi: $nro_cores_min")
+
+# 6.1 Coloração Harmônica por Grau Máximo (Lista de Adjacência)
+println("\nExecutando: Harmônica por Grau Máximo (Adj)...")
+@time cores_harm_max = coloracaoHarmonicaGrauMaxAdj!(lista_adj)
+nro_cores_max = maximum(cores_harm_max)
+println("--- Coloração Harmônica (Grau Máximo) ---")
+println("O número total de cores usado foi: $nro_cores_max")
+
+# 6.3 Coloração Harmônica por Saturação (Lista de Adjacência)
+println("\nExecutando: Harmônica por Saturação (Adj)...")
+@time cores_harm_sat = coloracaoHarmonicaSaturacaoAdj!(lista_adj)
+nro_cores_sat = maximum(cores_harm_sat)
+println("--- Coloração Harmônica (Saturação/DSATUR) ---")
+println("O número total de cores usado foi: $nro_cores_sat")
+
+# resumo para comparação
+println("\n" * "="^40)
+println("RESULTADOS FINAIS (n=$num_vertices, m=$num_arestas)")
+println("Cores (Grau Máximo): $nro_cores_max")
+println("Cores (Grau Mínimo): $nro_cores_min")
+println("Cores (Saturação):   $nro_cores_sat")
+println("="^40)=#
