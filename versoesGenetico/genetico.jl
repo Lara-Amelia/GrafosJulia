@@ -9,8 +9,8 @@ println("Insira o nome do arquivo a ser lido: ")
 nome_arquivo = readline()
 
 num_vertices, num_arestas = leInfo!(nome_arquivo)
-println("nro de vertices: ", num_vertices)
-println("nro de arestas: ", num_arestas)
+println("nro de vertices: $num_vertices")
+println("nro de arestas: $num_arestas")
 
 matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
@@ -77,7 +77,8 @@ println("\n--- Coloração harmônica final ---")
 for i in 1:num_vertices
     println("Vértice $i: cor $(cores_vertices[i])")
 end
-println("Número total de cores usadas: ", maximum(cores_vertices))
+total_cores = maximum(cores_vertices)
+println("Número total de cores usadas: $total_cores")
 
 #=using Metaheuristics
 using LinearAlgebra

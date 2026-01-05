@@ -9,8 +9,8 @@ println("Insira o nome do arquivo a ser lido: ")
 nome_arquivo = readline()
 
 num_vertices, num_arestas = leInfo!(nome_arquivo)
-println("nro de vertices: ", num_vertices)
-println("nro de arestas: ", num_arestas)
+println("nro de vertices: $num_vertices")
+println("nro de arestas: $num_arestas")
 
 matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
