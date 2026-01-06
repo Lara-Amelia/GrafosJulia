@@ -2,7 +2,6 @@
 using Metaheuristics
 using LinearAlgebra
 # base methods
-using Metaheuristics
 import Metaheuristics: initialize!, update_state!, final_stage!, gen_initial_state
 #import Metaheuristics: AbstractParameters, gen_initial_state, Algorithm, get_position
 # genetic operators
@@ -17,8 +16,8 @@ println("Insira o nome do arquivo a ser lido: ")
 nome_arquivo = readline()
 
 num_vertices, num_arestas = leInfo!(nome_arquivo)
-println("nro de vertices: ", num_vertices)
-println("nro de arestas: ", num_arestas)
+println("nro de vertices: $num_vertices")
+println("nro de arestas: $num_arestas")
 
 matriz_adj = zeros(Int, num_vertices, num_vertices)
 leArestas!(nome_arquivo, matriz_adj)
@@ -26,7 +25,7 @@ leArestas!(nome_arquivo, matriz_adj)
 print("Insira o número máximo (inteiro) de iterações sem melhora do fitness (k): ")
 input_string = readline()
 k = parse(Int, input_string)
-println("O parametro escolhido foi: ", k)
+println("O parametro escolhido foi: $k")
 
 #coloração harmônica utilizando somente o algoritmo guloso
 cores_aresta_distinguivel = fill(-1, num_vertices)
@@ -155,9 +154,9 @@ function Metaheuristics.initialize!(
     information::Metaheuristics.Information,
     options::Metaheuristics.Options
 )
+    #parameters.last_best = Metaheuristics.best_alternative(population)
+    parameters.stag_iters = 0
     return Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
-    parameters.last_best = Metaheuristics.best_alternative(population)
-    parameters.stagnant_iters = 0
 end
 
 function Metaheuristics.update_state!(
@@ -167,7 +166,7 @@ function Metaheuristics.update_state!(
     information::Metaheuristics.Information,
     options::Metaheuristics.Options
 )
-    #implementa torunament selection
+    #implementa tournament selection
     function tournament_select(pop)
         k = 2  # tournament size
         candidates = rand(pop, k)                      #k soluções aleatórias 
@@ -270,9 +269,15 @@ melhor_individuo = Metaheuristics.minimizer(result)
 lista_prioridade = sortperm(melhor_individuo, rev = true)
 cores_vertices = NOVOcoloracaoHarmonicaGuloso!(matriz_adj, lista_prioridade)
 
-println(melhor_individuo)
+#println(melhor_individuo)
 #println("\n--- Coloração harmônica final ---")
 #for i in 1:num_vertices
 #    println("Vértice $i: cor $(cores_vertices[i])")
 #end
 #println("Número total de cores usadas: ", maximum(cores_vertices))
+
+# ALGUMAS DAS ALTERAÇÕES A SEREM REALIZADAS PARA MELHOR DESEMPENHO:
+#= memoização de valores de fitness (evita que recalculemos e tenhamos de executar a coloração várias vezes)
+   alterações no crossover e replacement para que não eliminem a diversidade (permite que o processo 
+   continue por mais gerações e traga resultados melhores/não convirja tão rápido)
+=#
