@@ -260,7 +260,7 @@ function main()
 
     # ordena data frames por n e p antes de escrever
     df_main = DataFrame(results_main)
-    sort!(df_main, [:n_config, :p_config, :v_config])
+    sort!(df_main, [:n, :p, :v])
 
     df_prof = DataFrame(results_prof)
     sort!(df_prof, [:n_config, :p_config, :v_config])
