@@ -67,7 +67,17 @@ function main()
     )
 
     # 2. Filtragem de Arquivos
-    all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
+    filtered_file_names = filter(f -> endswith(f, ".col"), readdir())
+
+    if isempty(filtered_file_names)
+        println("AVISO: Nenhum arquivo .col encontrado no diretório.")
+        return
+    end
+
+    sort!(filtered_file_names)
+    num_files = length(filtered_file_names)
+    println("--- Starting Greedy Experiments: $num_files files ---")
+    #=all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
     filtered_file_names = String[]
 
     limite_a = 1000
@@ -92,7 +102,7 @@ function main()
 
     sort!(filtered_file_names)
     num_files = length(filtered_file_names)
-    println("--- Starting Greedy Experiments: $num_files files ---")
+    println("--- Starting Greedy Experiments: $num_files files ---")=#
 
     detailed_results = []
     summary_results = []
