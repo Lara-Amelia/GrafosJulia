@@ -9,9 +9,12 @@ using CSV
 include("../colorGul.jl")
 
 # Variáveis globais para processamento 
-global matriz_adj = Matrix{Int}(undef, 0, 0)
+#=global matriz_adj = Matrix{Int}(undef, 0, 0)
 global num_vertices = 0
-global num_arestas = 0
+global num_arestas = 0=#
+
+global ADJ = Vector{Vector{Int}}()
+global V = 0
 
 """
 Extrai parâmetros (a, b, c, v) do nome do arquivo Galaxy.
@@ -35,7 +38,7 @@ end
 Executa uma heurística gulosa e mede o tempo
 """
 function run_greedy_experiment(file_name, heuristic::Function)
-    global matriz_adj
+    #=global matriz_adj
     global num_vertices
     global num_arestas
 
@@ -53,14 +56,39 @@ function run_greedy_experiment(file_name, heuristic::Function)
     catch e
         @error "Erro na heurística no arquivo $file_name: $e"
         return 0, 0.0
+    end=#
+
+    try
+        #=num_v, num_a = leInfo!(file_name)
+        matriz_adj = zeros(Int, num_v, num_v)
+        leArestas!(file_name, matriz_adj)=#
+
+        global ADJ, V
+        num_v, num_a = leInfo!(file_name)
+        ADJ = [Int[] for _ in 1:num_v]
+        leArestasLista!(file_name, ADJ)
+        V = num_v
+        
+        local cores_resultado
+        elapsed_time = @elapsed begin
+            #cores_resultado = heuristic(matriz_adj)
+            cores_resultado = heuristic(ADJ)
+        end
+        return maximum(cores_resultado), elapsed_time, num_v, num_a
+    catch e
+        @error "Erro no arquivo $file_name: $e"
+        return 0, 0.0, 0, 0
     end
 end
 
 function main()
     heuristics = Dict(
-        :max_deg => coloracaoHarmonicaGrauMax!,
+        #=:max_deg => coloracaoHarmonicaGrauMax!,
         :min_deg => coloracaoHarmonicaGrauMin!,
-        :sat_deg => NOVOcoloracaoHarmonicaSaturacao!
+        :sat_deg => NOVOcoloracaoHarmonicaSaturacao!=#
+        :max_deg => coloracaoHarmonicaGrauMaxAdj!, 
+        :min_deg => coloracaoHarmonicaGrauMinAdj!,
+        :sat_deg => coloracaoHarmonicaSaturacaoAdj!
     )
 
     # Coleta todos os arquivos sem filtros de parâmetros
@@ -79,7 +107,7 @@ function main()
         println("($index/$num_files) Processando $file_name...")
 
         # Carrega o grafo uma única vez para este arquivo para economizar I/O
-        global matriz_adj, num_vertices, num_arestas
+        #=global matriz_adj, num_vertices, num_arestas
         try
             num_vertices, num_arestas = leInfo!(file_name)
             matriz_adj = zeros(Int, num_vertices, num_vertices)
@@ -87,12 +115,12 @@ function main()
         catch e
             @warn "Falha ao carregar $file_name, pulando... Erro: $e"
             continue
-        end
+        end=#
 
         # Execução das 3 heurísticas 
-        max_c, max_t = run_greedy_experiment(file_name, heuristics[:max_deg])
-        min_c, min_t = run_greedy_experiment(file_name, heuristics[:min_deg])
-        sat_c, sat_t = run_greedy_experiment(file_name, heuristics[:sat_deg])
+        max_c, max_t, num_vertices, num_arestas = run_greedy_experiment(file_name, heuristics[:max_deg])
+        min_c, min_t, num_vertices, num_arestas = run_greedy_experiment(file_name, heuristics[:min_deg])
+        sat_c, sat_t, num_vertices, num_arestas = run_greedy_experiment(file_name, heuristics[:sat_deg])
 
         params = extract_galaxy_params(file_name)
         
@@ -149,8 +177,8 @@ function main()
         select!(df_summary, [:instancia, :a, :b, :c, :v, :N, :M, :melhor_chi, :tempo_melhor, :heuristica_vencedora])
 
         # Geração dos arquivos CSV
-        CSV.write("results_Greedy_todos.csv", df_detailed)
-        CSV.write("results_Greedy_melhor.csv", df_summary)
+        CSV.write("resultsGulGalaxyADJ.csv", df_detailed)
+        CSV.write("resultsGulGalaxyADJ_sumario.csv", df_summary)
 
         println("\n--- Concluído! CSVs gerados para $num_files arquivos. ---")
     else
