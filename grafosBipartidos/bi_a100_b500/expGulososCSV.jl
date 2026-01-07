@@ -9,9 +9,12 @@ using ProgressMeter
 # Inclui as funções de coloração
 include("../../colorGul.jl")
 
-global matriz_adj = Matrix{Int}(undef, 0, 0)
+#=global matriz_adj = Matrix{Int}(undef, 0, 0)
 global num_vertices = 0
-global num_arestas = 0
+global num_arestas = 0=#
+
+global ADJ = Vector{Vector{Int}}()
+global V = 0
 
 function extract_bipartite_params(file_name)
     match_result = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
@@ -27,15 +30,23 @@ function extract_bipartite_params(file_name)
 end
 
 function run_greedy_experiment(file_name::String, heuristic::Function)
-    global matriz_adj
+    #global matriz_adj
+    global ADJ, V
     try
-        num_v, num_a = leInfo!(file_name)
+        #=num_v, num_a = leInfo!(file_name)
         matriz_adj = zeros(Int, num_v, num_v)
-        leArestas!(file_name, matriz_adj)
+        leArestas!(file_name, matriz_adj)=#
+
+        global ADJ, V
+        num_v, num_a = leInfo!(file_name)
+        ADJ = [Int[] for _ in 1:num_v]
+        leArestasLista!(file_name, ADJ)
+        V = num_v
         
         local cores_resultado
         elapsed_time = @elapsed begin
-            cores_resultado = heuristic(matriz_adj)
+            #cores_resultado = heuristic(matriz_adj)
+            cores_resultado = heuristic(ADJ)
         end
         return maximum(cores_resultado), elapsed_time, num_v, num_a
     catch e
@@ -47,16 +58,19 @@ end
 function main()
     # 1. Definição das Heurísticas
     heuristics = Dict(
-        :max_deg => coloracaoHarmonicaGrauMax!,
+        #=:max_deg => coloracaoHarmonicaGrauMax!,
         :min_deg => coloracaoHarmonicaGrauMin!,
-        :sat_deg => NOVOcoloracaoHarmonicaSaturacao! 
+        :sat_deg => NOVOcoloracaoHarmonicaSaturacao!=#
+        :max_deg => coloracaoHarmonicaGrauMaxAdj!, 
+        :min_deg => coloracaoHarmonicaGrauMinAdj!,
+        :sat_deg => coloracaoHarmonicaSaturacaoAdj!
     )
 
     # 2. Filtragem de Arquivos
     all_files = filter(f -> startswith(f, "bi_") && endswith(f, ".col"), readdir())
     filtered_file_names = String[]
 
-    limite_a = 500
+    limite_a = 1000
     limite_b = 1000
 
     for file_name in all_files
@@ -134,11 +148,11 @@ function main()
     # 5. Geração dos CSVs
     df_detailed = DataFrame(detailed_results)
     sort!(df_detailed, [:a, :b, :p, :v])
-    CSV.write("results_Greedy_Bipartite_Detailed.csv", df_detailed)
+    CSV.write("resultsGulADJ.csv", df_detailed)
 
     df_summary = DataFrame(summary_results)
     sort!(df_summary, [:a, :b, :p, :v])
-    CSV.write("results_Greedy_Bipartite_Summary.csv", df_summary)
+    CSV.write("resultsGulADJ_sumario.csv", df_summary)
 
     println("\n--- Experimentos Concluídos! ---")
 end

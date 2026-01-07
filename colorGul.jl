@@ -1009,7 +1009,7 @@ function coloracaoHarmonicaSaturacaoAdj!(adj_list::Vector{Vector{Int}})
     end
 
     # verificação da validade da coloração (tamanho do set e quantidade de arestas)
-    num_arestas_grafo = sum(length.(adj_list)) ÷ 2
+    #=num_arestas_grafo = sum(length.(adj_list)) ÷ 2
     println("nro. de arestas verificação = $num_arestas_grafo")
     if length(cores_arestas_usadas) != num_arestas_grafo
         error("Erro: violação da restrição harmônica na coloração")
@@ -1020,7 +1020,7 @@ function coloracaoHarmonicaSaturacaoAdj!(adj_list::Vector{Vector{Int}})
         println("Coloração Harmônica proposta é VÁLIDA")
     else
         println("Coloração Harmônica proposta é INVÁLIDA")
-    end
+    end=#
 
     return cores_vertices
 end
