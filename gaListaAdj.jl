@@ -102,7 +102,22 @@ CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = k,
                  last_best = -1, stag_iters = 0) =
     CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters)
 
+# método para gerar um indivíduo do genético a partir da ordem por grau definida
+function create_greedy_individual(permutation::Vector{Int})
+    n = length(permutation)
+    x = zeros(Float64, n)
+    
+    for (rank, node_idx) in enumerate(permutation)
+        # quanto maior o rank do vértice, maior é o valor em Float64 recebido 
+        # (ou seja, mantemos a mesma ordem)
+        x[node_idx] = (n - rank + 1) / n
+    end
+    return x
+end
+
 # inicialização do estado da população
+# NOTA: alteração para incluir na pop. inicial as ordenações por grau máximo e grau mínimo
+# (ainda não acrescentamos por grau de saturação devido à ordem dinâmica - pode ser complexo demais)
 function Metaheuristics.initialize!(
     status,
     parameters::CustomGAParams,
@@ -113,6 +128,33 @@ function Metaheuristics.initialize!(
     #parameters.last_best = Metaheuristics.best_alternative(population)
     parameters.stag_iters = 0
     return Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+
+    # adição "artificial" das abordagens gulosas na população inicial
+    greedy_orders = [
+        obtemPrioridadePorGrauAdj(ADJ, true),  # grau máximo 
+        obtemPrioridadePorGrauAdj(ADJ, false), # grau mínimo
+        #collect(1:V)                           # Sequential/Natural Order [cite: 315]
+    ]
+    
+    # substituir indivíduos pelas ordenações geradas
+    for (i, order) in enumerate(greedy_orders)
+        if i <= length(state.population)
+            greedy_x = create_greedy_individual(order)
+            # avaliação do fitness assim que o indivíduo correspondente é criado
+            greedy_f = fitness_harmonious_coloring(greedy_x)
+            
+            # inclusão dos novos indivíduos na população
+            state.population[i] = Metaheuristics.xf_solution(greedy_x, greedy_f)
+        end
+    end
+
+    # re-ordenação da população de forma que os de melhor fitness ficam no início
+    sort!(state.population, by = s -> s.f)
+    
+    # inicialização de last_best com o melhor da população inicial
+    parameters.last_best = state.population[1].f
+    
+    return state
 end
 
 function Metaheuristics.update_state!(
@@ -220,3 +262,14 @@ result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_ga)
 #=melhor_x = Metaheuristics.minimizer(result)
 println("Melhor número de cores: ",
         fitness_harmonious_coloring(melhor_x))=#
+
+# NOTA: tentativas de melhoria para o desempenho do GA em termos de qualidade da coloração obtida - 
+# inserir ordens gulosas na população inicial, alterar operadores (especialmente o crossover, 
+# que parece ser fraco/gerar pouca diversidade na população - nas últimas gerações do GA, temos indivíduos 
+# com basicamente a exata mesma ordem, ou seja, podemos extar explorando pouco o espaço de busca), 
+# implementação de uma busca local (GRASP) que poderia ser utilizada como operador de mutação 
+# (apesar de que a mutação atual parece ser boa para a diversificação da população)
+
+# NOTA: verificar questão com grafos simples densos que sempre caem no pior caso (possivelmente pq
+# a população inicial em si sempre começa com todos os elementos no pior caso, e o algoritmo não consegue
+# realmente evoluir a partir daí - nesses casos os 3 gulosos também resultam sempre no pior caso)
