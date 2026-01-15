@@ -195,26 +195,59 @@ function run_ga_experiment(file_name::String, k_limit::Int, N_pop::Int)
            TIME_UPDATE_STATE[]
 end
 
+# método para extração de parâmetros do nome do arquivo de entrada
+function extract_bipartite_params(file_name)
+    match_result = match(r"bi_a(\d+)_b(\d+)_p(\d+)%_v(\d+)\.col", file_name)
+    if match_result !== nothing
+        return Dict(
+            :a_param => parse(Int, match_result.captures[1]),
+            :b_param => parse(Int, match_result.captures[2]),
+            :p_param => parse(Int, match_result.captures[3]),
+            :v_param => parse(Int, match_result.captures[4])
+        )
+    end
+    return nothing
+end
+
 function main()
     N_REPETITIONS = 5
     K_LIMIT = 50
     N_POP = 200
+    
+    TARGET_A = 100
+    TARGET_B = 1000
 
+    # filtragem de arquivos de entrada de acordo com os parâmetros desejados
     all_files = filter(f -> endswith(f, ".col"), readdir())
+    filtered_files = String[]
+
+    for file in all_files
+        p = extract_bipartite_params(file)
+        if p !== nothing && p[:a_param] == TARGET_A && p[:b_param] == TARGET_B
+            push!(filtered_files, file)
+        end
+    end
+
+    if isempty(filtered_files)
+        println("AVISO: Nenhum arquivo corresponde aos critérios (a=$TARGET_A, b=$TARGET_B).")
+        return
+    end
+
+    sort!(filtered_files)
     results_main = []
     results_prof = []
 
-    @showprogress 1 "Processando: " for (idx, file) in enumerate(all_files)
-        println("\n[$idx/$(length(all_files))] Processing: $file")
+    @showprogress 1 "Processando: " for (idx, file) in enumerate(filtered_files)
+        println("\n[$idx/$(length(filtered_files))] Processing: $file")
 
+        params = extract_bipartite_params(file)
         t_tot, chi = Float64[], Int[]
-        t_fit, t_cross, t_mut, t_sel, t_init, t_upd =
+        t_fit, t_cross, t_mut, t_sel, t_init, t_upd = 
             Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
 
         local nv, na
         for i in 1:N_REPETITIONS
-            tt, ch, nv, na, tf, tx, tm, ts, ti, tu =
-                run_ga_experiment(file, K_LIMIT, N_POP)
+            tt, ch, nv, na, tf, tx, tm, ts, ti, tu = run_ga_experiment(file, K_LIMIT, N_POP)
 
             push!(t_tot, tt); push!(chi, ch)
             push!(t_fit, tf); push!(t_cross, tx)
@@ -227,18 +260,25 @@ function main()
         se(v) = std(v) / sqrt(length(v))
         meanr(v) = mean(v)
 
+        # dicionário na ordem desejada para a saída do .csv final
         push!(results_main, Dict(
-            :instancia => file,
+            :a => params[:a_param],
+            :b => params[:b_param],
             :N => nv,
+            :p => params[:p_param],
             :M => na,
+            :v => params[:v_param],
+            :mean_time => meanr(t_tot),
+            :se_time => se(t_tot),
             :mean_chi => meanr(chi),
             :se_chi => se(chi),
-            :mean_time => meanr(t_tot),
-            :se_time => se(t_tot)
+            :instancia => file
         ))
 
         push!(results_prof, Dict(
             :instancia => file,
+            :a => params[:a_param],
+            :b => params[:b_param],
             :mean_fit_t => meanr(t_fit),
             :mean_sel_t => meanr(t_sel),
             :mean_cross_t => meanr(t_cross),
@@ -248,8 +288,12 @@ function main()
         ))
     end
 
-    CSV.write("results_GA_Final.csv", DataFrame(results_main))
-    CSV.write("results_GA_Profiling.csv", DataFrame(results_prof))
+    df_main = DataFrame(results_main)
+    col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :instancia]
+    select!(df_main, col_order)
+
+    CSV.write("results_GA_Final_a100_b500.csv", df_main)
+    CSV.write("results_GA_Profiling_a100_b500.csv", DataFrame(results_prof))
 
     println("\n--- Experimentos concluídos ---")
 end
