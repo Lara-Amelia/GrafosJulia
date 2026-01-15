@@ -96,7 +96,7 @@ end
 CustomGAParams(; N, p_mutation=0.5, stag_limit) =
     CustomGAParams(N, p_mutation, stag_limit, Inf, 0)
 
-function Metaheuristics.initialize!(
+#=function Metaheuristics.initialize!(
     status,
     params::CustomGAParams,
     problem,
@@ -107,6 +107,47 @@ function Metaheuristics.initialize!(
         params.last_best = Inf
         params.stag_iters = 0
         state = gen_initial_state(problem, params, information, options, status)
+    end
+    TIME_INITIALIZE[] += t
+    return state
+end=#
+
+function Metaheuristics.initialize!(
+    status,
+    parameters::CustomGAParams,
+    problem::Metaheuristics.Problem,
+    information::Metaheuristics.Information,
+    options::Metaheuristics.Options
+)
+    t = @elapsed begin
+        #parameters.last_best = Metaheuristics.best_alternative(population)
+        parameters.stag_iters = 0
+        return Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+
+        # adição "artificial" das abordagens gulosas na população inicial
+        greedy_orders = [
+            obtemPrioridadePorGrauAdj(ADJ, true),  # grau máximo 
+            obtemPrioridadePorGrauAdj(ADJ, false), # grau mínimo
+            #collect(1:V)                           # Sequential/Natural Order [cite: 315]
+        ]
+        
+        # substituir indivíduos pelas ordenações geradas
+        for (i, order) in enumerate(greedy_orders)
+            if i <= length(state.population)
+                greedy_x = create_greedy_individual(order)
+                # avaliação do fitness assim que o indivíduo correspondente é criado
+                greedy_f = fitness_harmonious_coloring(greedy_x)
+                
+                # inclusão dos novos indivíduos na população
+                state.population[i] = Metaheuristics.xf_solution(greedy_x, greedy_f)
+            end
+        end
+
+        # re-ordenação da população de forma que os de melhor fitness ficam no início
+        sort!(state.population, by = s -> s.f)
+        
+        # inicialização de last_best com o melhor da população inicial
+        parameters.last_best = state.population[1].f
     end
     TIME_INITIALIZE[] += t
     return state
@@ -245,8 +286,8 @@ function main()
         ))
     end
 
-    CSV.write("results_GA_Final.csv", DataFrame(results_main))
-    CSV.write("results_GA_Profiling_Summary.csv", DataFrame(results_prof))
+    CSV.write("results_GA_Final_initDiff.csv", DataFrame(results_main))
+    CSV.write("results_GA_Profiling_Summary_initDiff.csv", DataFrame(results_prof))
 
     println("\nCSVs Finalizados.")
 end
