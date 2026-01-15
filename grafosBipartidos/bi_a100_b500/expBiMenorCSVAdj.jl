@@ -214,8 +214,8 @@ function main()
     K_LIMIT = 50
     N_POP = 200
     
-    TARGET_A = 100
-    TARGET_B = 10000
+    TARGET_A = 500
+    TARGET_B = 500
 
     # filtragem de arquivos de entrada de acordo com os parâmetros desejados
     all_files = filter(f -> endswith(f, ".col"), readdir())
@@ -292,8 +292,8 @@ function main()
     col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :instancia]
     select!(df_main, col_order)
 
-    CSV.write("results_GA_Final_a100_b10000.csv", df_main)
-    CSV.write("results_GA_Profiling_a100_b10000.csv", DataFrame(results_prof))
+    CSV.write("results_GA_Final_a500_b500.csv", df_main)
+    CSV.write("results_GA_Profiling_a500_b500.csv", DataFrame(results_prof))
 
     println("\n--- Experimentos concluídos ---")
 end
