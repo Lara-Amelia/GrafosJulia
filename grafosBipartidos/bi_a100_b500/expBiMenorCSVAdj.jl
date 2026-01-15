@@ -215,7 +215,7 @@ function main()
     N_POP = 200
     
     TARGET_A = 100
-    TARGET_B = 1000
+    TARGET_B = 500
 
     # filtragem de arquivos de entrada de acordo com os parâmetros desejados
     all_files = filter(f -> endswith(f, ".col"), readdir())
