@@ -264,7 +264,7 @@ function main()
     N_POP = 200
     
     TARGET_A = 100
-    TARGET_B = 100
+    TARGET_B = 500
 
     # filtragem de arquivos de entrada de acordo com os parâmetros desejados
     all_files = filter(f -> endswith(f, ".col"), readdir())
@@ -332,7 +332,7 @@ function main()
     col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :instancia]
     select!(df_main, col_order)
 
-    CSV.write("results_GA_Final_a100_b100_final.csv", df_main)
+    CSV.write("results_GA_Final_a100_b500_final.csv", df_main)
 
     println("\n--- Experimentos concluídos ---")
 end
