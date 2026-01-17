@@ -11,20 +11,6 @@ import Metaheuristics: initialize!, update_state!, final_stage!, gen_initial_sta
 
 include("../colorGul.jl")
 
-const TIME_FITNESS    = Ref(0.0)
-const TIME_CROSSOVER  = Ref(0.0)
-const TIME_MUTATION   = Ref(0.0)
-const TIME_SELECTION = Ref(0.0)
-const TIME_INITIALIZE = Ref(0.0)
-const TIME_UPDATE_STATE = Ref(0.0)
-
-function reset_timers!()
-    for t in (TIME_FITNESS, TIME_CROSSOVER, TIME_MUTATION,
-              TIME_SELECTION, TIME_INITIALIZE, TIME_UPDATE_STATE)
-        t[] = 0.0
-    end
-end
-
 global ADJ = Vector{Vector{Int}}()
 global V = 0
 
@@ -33,85 +19,90 @@ const FITNESS_CACHE = Dict{UInt64, Float64}()
 function hash_perm(p::Vector{Int})
     h = UInt64(1469598103934665603)
     for x in p
-        h ⊻= UInt64(x)
-        h *= 1099511628211
+        h ⊻= UInt64(x)     # XOR bit a bit
+        h *= 1099511628211 # multiplicação pelo primo FNV
     end
     return h
 end
 
-function fitness_harmonious_coloring(ind::Vector{Float64})
-    t = @elapsed begin
-        perm = sortperm(ind, rev = true)
-        h = hash_perm(perm)
+# função de fitness utilizando tabela hash (recuperar valores para ordens já calculadas)
+# e lista de adjacência (ao invés de matriz de adjacência)
+function fitness_harmonious_coloring(individual::Vector{Float64})
+    lista_prioridade = sortperm(individual, rev = true)
+    h = hash_perm(lista_prioridade)
 
-        if haskey(FITNESS_CACHE, h)
-            res = FITNESS_CACHE[h]
-        else
-            cores = coloracaoHarmonicaAdjVetAux!(ADJ, perm)
-            res = maximum(cores)
-            FITNESS_CACHE[h] = res
+    # se a chave associada a ordem já está na tabela hash, apenas recuperamos o fitness
+    if haskey(FITNESS_CACHE, h)
+        return FITNESS_CACHE[h]
+    end
+
+    # fazemos a coloração para a ordem sse não encontramos associada a chave na tabela hash
+    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, lista_prioridade)
+    fitness = maximum(cores_vertices)
+    FITNESS_CACHE[h] = fitness
+    return fitness
+end
+
+# tentamos até encontrar um vértice com pelo menos um vizinho para a mutação
+# caso contrário teríamos puramente repetição de indivíduos e, com isso, menos diversidade 
+function graph_swap_mutation!(x::Vector{Float64})
+    n = length(x)
+
+    while true
+        v1 = rand(1:n)                  # vértice escolhido aleatoriamente 
+        vizinhos = ADJ[v1]              # recuperação dos vizinhos do primeiro vértice
+
+        if !isempty(vizinhos)           # se há algum vizinho, selecionamos random para swap
+            v2 = rand(vizinhos)
+            x[v1], x[v2] = x[v2], x[v1] # swap de prioridades entre vértices vizinhos
+            return x
         end
     end
-    TIME_FITNESS[] += t
-    return Float64(res)
 end
 
-function tournament_select(pop)
-    t = @elapsed begin
-        a, b = rand(pop, 2)
-        res = (a.f <= b.f) ? a.x : b.x
-    end
-    TIME_SELECTION[] += t
-    return res
-end
+#crossover retornando somente 1 filho, média simples dos pais
+function crossover_media_simples(parents::Matrix{Float64})
+    p1 = parents[1, :]
+    p2 = parents[2, :]
+    child = (p1 .+ p2) ./2.0
+    return [child']
+    #return child
+end 
 
-function crossover_media_simples(p1, p2)
-    t = @elapsed child = (p1 .+ p2) ./ 2
-    TIME_CROSSOVER[] += t
-    return child
-end
+# NOTA: implementar os demais métodos personalizados adaptados se for necessário
 
-function graph_swap_mutation!(x)
-    t = @elapsed begin
-        while true
-            v1 = rand(1:length(x))
-            if !isempty(ADJ[v1])
-                v2 = rand(ADJ[v1])
-                x[v1], x[v2] = x[v2], x[v1]
-                return
-            end
-        end
-    end
-    TIME_MUTATION[] += t
-end
-
+# definição do GA personalizado - poderíamos incluir outros campos, como 
+# probabilidade associada a crossover, a mutação, etc (por enquanto não será aplicado)
 mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     N::Int
     p_mutation::Float64
     stag_limit::Int
-    last_best::Float64
+    last_best::Float64 # provavelmente será Int p/ nro. de cores = fitness
     stag_iters::Int
 end
 
-CustomGAParams(; N, p_mutation=0.5, stag_limit) =
-    CustomGAParams(N, p_mutation, stag_limit, Inf, 0)
+# o valor k (limite de iterações estagnadas será lido da entrada)
+CustomGAParams(; N = 200, p_mutation = 0.5, stag_limit = k, 
+                 last_best = -1, stag_iters = 0) =
+    CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters)
 
-#=function Metaheuristics.initialize!(
-    status,
-    params::CustomGAParams,
-    problem,
-    information,
-    options
-)
-    t = @elapsed begin
-        params.last_best = Inf
-        params.stag_iters = 0
-        state = gen_initial_state(problem, params, information, options, status)
+# método para gerar um indivíduo do genético a partir da ordem por grau definida
+function create_greedy_individual(permutation::Vector{Int})
+    n = length(permutation)
+    x = zeros(Float64, n)
+    
+    for (rank, node_idx) in enumerate(permutation)
+        # quanto maior o rank do vértice, maior é o valor em Float64 recebido 
+        # (ou seja, mantemos a mesma ordem)
+        x[node_idx] = (n - rank + 1) / n
     end
-    TIME_INITIALIZE[] += t
-    return state
-end=#
+    return x
+end
 
+# inicialização do estado da população
+# NOTA: alteração para incluir na pop. inicial as ordenações por grau máximo e grau mínimo
+# (ainda não acrescentamos por grau de saturação devido à ordem dinâmica - pode ser complexo demais)
+# deve haver diversificação na população para que o genetico consiga evlouir a partir das ordens gulosas
 function Metaheuristics.initialize!(
     status,
     parameters::CustomGAParams,
@@ -119,128 +110,143 @@ function Metaheuristics.initialize!(
     information::Metaheuristics.Information,
     options::Metaheuristics.Options
 )
-    t = @elapsed begin
-        #parameters.last_best = Metaheuristics.best_alternative(population)
-        parameters.stag_iters = 0
-        return Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+    state = nothing
+    parameters.stag_iters = 0
+    parameters.last_best = Inf
 
-        # adição "artificial" das abordagens gulosas na população inicial
-        greedy_orders = [
-            obtemPrioridadePorGrauAdj(ADJ, true),  # grau máximo 
-            obtemPrioridadePorGrauAdj(ADJ, false), # grau mínimo
-            #collect(1:V)                           # Sequential/Natural Order [cite: 315]
-        ]
-        
-        # substituir indivíduos pelas ordenações geradas
-        for (i, order) in enumerate(greedy_orders)
-            if i <= length(state.population)
-                greedy_x = create_greedy_individual(order)
-                # avaliação do fitness assim que o indivíduo correspondente é criado
-                greedy_f = fitness_harmonious_coloring(greedy_x)
-                
-                # inclusão dos novos indivíduos na população
-                state.population[i] = Metaheuristics.xf_solution(greedy_x, greedy_f)
-            end
+    # pop. aleatória base 
+    state = Metaheuristics.gen_initial_state(
+            problem, parameters, information, options, status)
+
+    # "injeção" de ordens gulosas
+    #=greedy_orders = [
+        obtemPrioridadePorGrauAdj(ADJ, true),
+        obtemPrioridadePorGrauAdj(ADJ, false) ]
+
+    for (i, order) in enumerate(greedy_orders)
+        if i <= length(state.population)
+            greedy_x = create_greedy_individual(order)
+            greedy_f = fitness_harmonious_coloring(greedy_x)
+            state.population[i] = Metaheuristics.xf_solution(greedy_x, Float64(greedy_f))
         end
+    end=#
 
-        # re-ordenação da população de forma que os de melhor fitness ficam no início
-        sort!(state.population, by = s -> s.f)
-        
-        # inicialização de last_best com o melhor da população inicial
-        parameters.last_best = state.population[1].f
-    end
-    TIME_INITIALIZE[] += t
+    sort!(state.population, by = s -> s.f)
+
+    parameters.last_best = state.population[1].f
+    state.best_sol = deepcopy(state.population[1])
+
     return state
 end
 
 function Metaheuristics.update_state!(
     state,
-    params::CustomGAParams,
+    parameters::CustomGAParams,
     problem,
     information,
     options
 )
-    t = @elapsed begin
-        pop = state.population
-        offspring = Metaheuristics.xf_solution[]
+    pop = state.population
+    N = length(pop)
+    offspring = Metaheuristics.xf_solution[]
 
-        for _ in 1:div(params.N, 2)
-            p1 = tournament_select(pop)
-            p2 = tournament_select(pop)
+    # debug: print initial population fitness distribution
+    #@info "Population fitnesses: " [s.f for s in pop]
 
-            child = crossover_media_simples(p1, p2)
-
-            if rand() < params.p_mutation
-                graph_swap_mutation!(child)
-            end
-
-            f = problem.f(child)
-            push!(offspring, Metaheuristics.xf_solution(child, f))
-        end
-
-        # elitist replacement
-        combined = vcat(pop, offspring)
-        sort!(combined, by = s -> s.f)
-        state.population = combined[1:params.N]
-
-        gen_best = state.population[1]
-
-        # GLOBAL BEST 
-        if state.best_sol === nothing || gen_best.f < state.best_sol.f
-            state.best_sol = deepcopy(gen_best)
-        end
-
-        # stagnation
-        if gen_best.f < params.last_best
-            params.last_best = gen_best.f
-            params.stag_iters = 0
-        else
-            params.stag_iters += 1
-        end
+    function tournament_select(pop)
+        k = 2
+        candidates = rand(pop, k)
+        fitnesses = [c.f for c in candidates]
+        return candidates[argmin(fitnesses)].x
     end
-    TIME_UPDATE_STATE[] += t
 
-    return params.stag_iters < params.stag_limit
+    # geração de filhos (geramos vários)
+    for _ in 1:div(N, 2)
+        parent1 = tournament_select(state.population)
+        parent2 = tournament_select(state.population)
+
+        #parents = vcat(parent1', parent2')  
+        #child_x = crossover_media_simples(parents)
+        child_x = (parent1 .+ parent2) ./2.0
+
+        # mutação baseada na prob. de mutação definida
+        if rand() < parameters.p_mutation
+            graph_swap_mutation!(child_x)
+        end
+
+        fit = Float64(fitness_harmonious_coloring(child_x))
+        #@info "Child fitness: $fit, child sample priorities: $(child_x[1:5])"
+        push!(offspring, Metaheuristics.xf_solution(child_x, fit)) # objeto armazenando filhos
+    end
+
+    # elitist replacement
+    combined = vcat(pop, offspring)    # une pop. atual e filhos produzidos
+    sort!(combined, by = s -> s.f)     # ordena pelo valor do fitness
+    state.population = combined[1:N]   # seleciona somente os de melhor fitness na pop. combinada
+
+    
+    # atualização de parâmetros e estagnação
+    gen_best = state.population[1]
+
+    #@info "Generation best fitness: $(gen_best.f)"
+
+    # atualização da melhor solução
+    if state.best_sol === nothing || gen_best.f < state.best_sol.f
+        state.best_sol = deepcopy(gen_best)
+        #@info "New GLOBAL best: $(state.best_sol.f)"
+    end
+
+    # estagnação
+    if gen_best.f <= parameters.last_best
+        parameters.last_best = gen_best.f
+        parameters.stag_iters = 0
+    else
+        parameters.stag_iters += 1
+    end
+
+    if parameters.stag_iters >= parameters.stag_limit
+        #@info "Parada por estagnação"
+        return false
+    end
+
+    return true
+
 end
 
-Metaheuristics.final_stage!(state, params, problem, information, options) = state
+# caso queiramos fazer algum tratamento extra sobre o estado final do GA (por agora não)
+function Metaheuristics.final_stage!(
+    state,
+    parameters::CustomGAParams,
+    problem,
+    information,
+    options
+)
+    return state
+end
 
+# parâmetros para geração dos indivíduos - são permutações de valores reais entre 0 e 1
+# representando listas de prioridade na coloração (tentamos encontrar prioridades melhores)
 function run_ga_experiment(file_name::String, k_limit::Int, N_pop::Int)
-    reset_timers!()
-    empty!(FITNESS_CACHE)
-
-    global ADJ, V
-
-    num_v, num_a = leInfo!(file_name)
-    ADJ = [Int[] for _ in 1:num_v]
-    leArestasLista!(file_name, ADJ)
-    V = num_v
-
     bounds = [zeros(V) ones(V)]'
 
-    params = CustomGAParams(N = N_pop, stag_limit = k_limit)
-    algo = Metaheuristics.Algorithm(params)
+    params = CustomGAParams(N=200, p_mutation=0.5, stag_limit=50, last_best=Inf)
 
-    t = @elapsed result =
-        Metaheuristics.optimize(fitness_harmonious_coloring, bounds, algo)
+    opt_settings = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = 1000, store_convergence = true)
 
-    return t,
-           Int(Metaheuristics.minimum(result)),
-           num_v,
-           num_a,
-           TIME_FITNESS[],
-           TIME_CROSSOVER[],
-           TIME_MUTATION[],
-           TIME_SELECTION[],
-           TIME_INITIALIZE[],
-           TIME_UPDATE_STATE[]
+    my_ga = Metaheuristics.Algorithm(params, options = opt_settings)
+    problem = Metaheuristics.Problem(fitness_harmonious_coloring, bounds)
+
+    result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_ga)
+
+    return Int(Metaheuristics.minimum(result))
 end
 
+# talvez passar a leitura do grafo para esse loop, para evitar reler o mesmo grafo várias vezes
 function main()
     all_files = filter(f -> startswith(f, "galaxy_") && endswith(f, ".col"), readdir())
     sort!(all_files)
 
-    results_main, results_prof = [], []
+    results_main= []
     n_rep = 5
     K_STAG = 50
     N_POP = 200
@@ -249,45 +255,56 @@ function main()
         println("\n[$idx/$(length(all_files))] Processing: $file")
         
         t_tot, chi = Float64[], Int[]
-        t_fit, t_cross, t_mut, t_sel, t_init, t_upd = [Float64[] for _ in 1:6]
-        
+        empty!(FITNESS_CACHE)
+
+        global ADJ, V
+        num_v, num_a = leInfo!(file)
+        ADJ = [Int[] for _ in 1:num_v]
+        leArestasLista!(file, ADJ)
+        V = num_v
+
         # Regex para extrair parâmetros do padrão galaxy_aX_bX_cX_vX
         m_a = match(r"a(\d+)", file); a = m_a !== nothing ? parse(Int, m_a.captures[1]) : 0
         m_b = match(r"b(\d+)", file); b = m_b !== nothing ? parse(Int, m_b.captures[1]) : 0
         m_c = match(r"c(\d+)", file); c = m_c !== nothing ? parse(Int, m_c.captures[1]) : 0
         m_v = match(r"v(\d+)", file); v = m_v !== nothing ? parse(Int, m_v.captures[1]) : 0
 
-        local nv, na
         for i in 1:n_rep
-            tt, ch, nv, na, tf, tx, tm, ts, ti, tu = run_ga_experiment(file, K_STAG, N_POP)
-            push!(t_tot, tt); push!(chi, ch)
-            push!(t_fit, tf); push!(t_cross, tx); push!(t_mut, tm)
-            push!(t_sel, ts); push!(t_init, ti); push!(t_upd, tu)
-            @printf("   Run %d Done (Chi: %d)\n", i, ch)
+            elapsed = @elapsed begin
+                ch = run_ga_experiment(file, K_STAG, N_POP)
+            end
+                push!(t_tot, elapsed)
+                push!(chi, ch)
+                @printf("   Run %d Done (Chi: %d)\n", i, ch)
         end
 
         se(v) = round(std(v)/sqrt(n_rep), digits=4)
         mn(v) = round(mean(v), digits=5)
 
         push!(results_main, Dict(
-            :instancia => file, :a => a, :b => b, :c => c, :v => v, :N => nv, :M => na,
+            :instancia => file, :a => a, :b => b, :c => c, :v => v, :N => num_v, :M => num_a,
             :mean_chi => mean(chi), :se_chi => se(chi),
             :mean_time => mn(t_tot), :se_time => se(t_tot)
         ))
-
-        push!(results_prof, Dict(
-            :instancia => file, :a => a, :b => b, :c => c, :v => v, :N => nv, :M => na,
-            :mean_init_t => mn(t_init), :se_init_t => se(t_init),
-            :mean_upd_t  => mn(t_upd),  :se_upd_t  => se(t_upd),
-            :mean_fit_t  => mn(t_fit),  :se_fit_t  => se(t_fit),
-            :mean_sel_t  => mn(t_sel),  :se_sel_t  => se(t_sel),
-            :mean_cross_t => mn(t_cross), :se_cross_t => se(t_cross),
-            :mean_mut_t  => mn(t_mut),  :se_mut_t  => se(t_mut)
-        ))
     end
 
-    CSV.write("results_GA_Final_initDiff.csv", DataFrame(results_main))
-    CSV.write("results_GA_Profiling_Summary_initDiff.csv", DataFrame(results_prof))
+    df = DataFrame(results_main)
+
+    df = df[:, [
+        :instancia,
+        :a,
+        :b,
+        :c,
+        :v,
+        :N,
+        :M,
+        :mean_chi,
+        :se_chi,
+        :mean_time,
+        :se_time
+    ]]
+
+    CSV.write("results_GA_Final_ADJ.csv", df)
 
     println("\nCSVs Finalizados.")
 end
