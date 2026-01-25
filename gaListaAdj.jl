@@ -98,7 +98,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
 end
 
 # o valor k (limite de iterações estagnadas será lido da entrada)
-CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = k, 
+CustomGAParams(; N = 200, p_mutation = 0.5, stag_limit = k, 
                  last_best = -1, stag_iters = 0) =
     CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters)
 
@@ -118,6 +118,7 @@ end
 # inicialização do estado da população
 # NOTA: alteração para incluir na pop. inicial as ordenações por grau máximo e grau mínimo
 # (ainda não acrescentamos por grau de saturação devido à ordem dinâmica - pode ser complexo demais)
+# deve haver diversificação na população para que o genetico consiga evlouir a partir das ordens gulosas
 function Metaheuristics.initialize!(
     status,
     parameters::CustomGAParams,
@@ -125,35 +126,32 @@ function Metaheuristics.initialize!(
     information::Metaheuristics.Information,
     options::Metaheuristics.Options
 )
-    #parameters.last_best = Metaheuristics.best_alternative(population)
+    state = nothing
     parameters.stag_iters = 0
-    return Metaheuristics.gen_initial_state(problem, parameters, information, options, status)
+    parameters.last_best = Inf
 
-    # adição "artificial" das abordagens gulosas na população inicial
-    greedy_orders = [
-        obtemPrioridadePorGrauAdj(ADJ, true),  # grau máximo 
-        obtemPrioridadePorGrauAdj(ADJ, false), # grau mínimo
-        #collect(1:V)                           # Sequential/Natural Order [cite: 315]
-    ]
-    
-    # substituir indivíduos pelas ordenações geradas
+    # pop. aleatória base 
+    state = Metaheuristics.gen_initial_state(
+            problem, parameters, information, options, status)
+
+    # "injeção" de ordens gulosas
+    #=greedy_orders = [
+        obtemPrioridadePorGrauAdj(ADJ, true),
+        obtemPrioridadePorGrauAdj(ADJ, false) ]
+
     for (i, order) in enumerate(greedy_orders)
         if i <= length(state.population)
             greedy_x = create_greedy_individual(order)
-            # avaliação do fitness assim que o indivíduo correspondente é criado
             greedy_f = fitness_harmonious_coloring(greedy_x)
-            
-            # inclusão dos novos indivíduos na população
-            state.population[i] = Metaheuristics.xf_solution(greedy_x, greedy_f)
+            state.population[i] = Metaheuristics.xf_solution(greedy_x, Float64(greedy_f))
         end
-    end
+    end=#
 
-    # re-ordenação da população de forma que os de melhor fitness ficam no início
     sort!(state.population, by = s -> s.f)
-    
-    # inicialização de last_best com o melhor da população inicial
+
     parameters.last_best = state.population[1].f
-    
+    state.best_sol = deepcopy(state.population[1])
+
     return state
 end
 
@@ -169,7 +167,7 @@ function Metaheuristics.update_state!(
     offspring = Metaheuristics.xf_solution[]
 
     # debug: print initial population fitness distribution
-    #@info "Population fitnesses: " [s.f for s in pop]
+    @info "Population fitnesses: " [s.f for s in pop]
 
     function tournament_select(pop)
         k = 2
@@ -215,7 +213,7 @@ function Metaheuristics.update_state!(
     end
 
     # estagnação
-    if gen_best.f < parameters.last_best
+    if gen_best.f <= parameters.last_best
         parameters.last_best = gen_best.f
         parameters.stag_iters = 0
     else
