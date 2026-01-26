@@ -263,7 +263,7 @@ function main()
     K_LIMIT = 50
     N_POP = 200
     
-    TARGET_A = 500
+    TARGET_A = 100
     TARGET_B = 5000
 
     # filtragem de arquivos de entrada de acordo com os parâmetros desejados
