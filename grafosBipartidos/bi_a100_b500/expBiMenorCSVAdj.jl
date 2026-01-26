@@ -332,7 +332,7 @@ function main()
     col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :instancia]
     select!(df_main, col_order)
 
-    CSV.write("results_GA_Final_a500_b50000_final.csv", df_main)
+    CSV.write("results_GA_Final_a100_b50000_final.csv", df_main)
 
     println("\n--- Experimentos concluídos ---")
 end
