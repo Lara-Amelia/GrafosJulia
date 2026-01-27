@@ -77,7 +77,7 @@ end
 function main()
     N_REPETITIONS = 5
     
-    TARGET_A = 500
+    TARGET_A = 100
     TARGET_B = 1000
 
     # filtragem de arquivos de entrada de acordo com os parâmetros desejados
@@ -145,7 +145,7 @@ function main()
     col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :instancia]
     select!(df_main, col_order)
 
-    CSV.write("results_BRKGA_a500_b1000.csv", df_main)
+    CSV.write("results_BRKGA_a100_b1000.csv", df_main)
 
     println("\n--- Experimentos concluídos ---")
 end
