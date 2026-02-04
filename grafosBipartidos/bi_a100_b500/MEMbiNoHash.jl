@@ -133,7 +133,7 @@ function main()
     N_POP = 200
     
     TARGET_A = 100
-    TARGET_B = 500
+    TARGET_B = 1000
 
     # para testes de memória usaremos somente os grafos de versão 1
     all_files = filter(f -> endswith(f, "v1.col"), readdir())
@@ -209,7 +209,7 @@ function main()
     col_order = [:a, :b, :N, :p, :M, :v, :mean_time, :se_time, :mean_chi, :se_chi, :peak_mem_mb, :mean_mem_mb, :instancia]
     select!(df_main, col_order)
 
-    CSV.write("results_GA_MEM_noHash_a100_b500.csv", df_main)
+    CSV.write("results_GA_MEM_noHash_a100_b1000.csv", df_main)
     println("\n--- Experimentos concluídos. Resultados com memória salvos. ---")
 end
 
