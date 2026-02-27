@@ -78,7 +78,7 @@ end
 # mas apenas substituindo as chamadas a crossover e mutação por nossos próprios métodos
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    adj_list = ADJ
+    # adj_list = ADJ
     p = 0.5 # probabilidade de ocorência de mutação nos filhos do crossover
 
     # "pré-seleção" dos filhos que serão mutados
@@ -111,6 +111,11 @@ function replacement_elitism(population, offsprings, N)
     sort!(combined, alg=PartialQuickSort(N), by = s -> s.f)
 
     deleteat!(population, (N+1):length(population))
+end
+
+# função para critério de parada desejado
+function stop_on_stagnation(parameters)
+    return parameters.stag_iters >= parameters.stag_limit
 end
 
 # sobre-escrita de métodos do próprio GA (wrappers para as suas funções)
@@ -146,6 +151,25 @@ function Metaheuristics.update_state!(state,
     replacement_elitism(pop, offsprings, params.N)
     current_best = Metaheuristics.get_best(pop)
 
+    # lógica para critério de parada por gerações em estagnação
+    if parameters.last_best == Inf
+        parameters.last_best = current_best.f
+    end
+
+    if current_best.f < parameters.last_best
+        # se houve melhora, resetamos o contador de stag iters
+        parameters.last_best = current_best.f
+        parameters.stag_iters = 0
+    else
+        # se não houve melhora na geração, incrementamos o contador
+        parameters.stag_iters += 1
+    end
+
+    if parameters.stag_iters < parameters.stag_limit
+        println("nro. de iterações estagnadas: $(parameters.stag_iters)")
+        println("AINDA NÃO ATINGIMOS O LIMITE DE ITERAÇÕES SEM MELHORA")
+    end
+
     if Metaheuristics.is_better(current_best, state.best_sol)
         state.best_sol = deepcopy(current_best)
     end
@@ -161,18 +185,54 @@ function Metaheuristics.final_stage!(
     return state
 end
 
+# redefinição do método de critério de parada para garantir o uso de nosso critério
+function Metaheuristics.stop_criteria!(
+        status,
+        parameters::CustomGAParams,
+        problem::Metaheuristics.Problem,
+        information::Metaheuristics.Information,
+        options::Metaheuristics.Options,
+    )
+
+    status.stop = status.stop || Metaheuristics.call_limit_stop_check(status, information, options) ||
+                  Metaheuristics.iteration_stop_check(status, information, options)  ||
+                  Metaheuristics.time_stop_check(status, information, options)       ||
+                  Metaheuristics.accuracy_stop_check(status, information, options)
+
+    # inclusão do critério de parada personalizado - enviamos a mensagem de other_limit nesse caso
+    # NOTA: calibrar o valor de stag_limit?
+    if parameters.stag_iters >= parameters.stag_limit
+        status.stop = true
+        status.termination_status_code = Metaheuristics.OTHER_LIMIT
+        return
+    end  
+
+    return
+end
+
 # definição do genético personalizado utilizando os novos métodos
 bounds = [zeros(V) ones(V)]'
 
-params = CustomGAParams(N=100, p_mutation=0.5, stag_limit=50, last_best=Inf)
+params = CustomGAParams(N=100, p_mutation=0.5, stag_limit=100, last_best=Inf)
 
-opt_settings = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = 1000, store_convergence = true)
+#opt_settings = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = 1000, store_convergence = true)
+# novos parâmetros definidos em Options para evitar convergências "automáticas" da biblioteca
+opt_settings = Metaheuristics.Options(
+    f_calls_limit = typemax(Int), 
+    iterations = 10000, 
+    store_convergence = true,
+    f_tol = -1, 
+    x_tol = -1
+)
 
 my_ga = Metaheuristics.Algorithm(params, options = opt_settings)
 problem = Metaheuristics.Problem(fitness_harmonious_coloring, bounds)
 
+checkall = checkany = [stop_on_stagnation]
 result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_ga)
 
 # resultados da otimização
 @show Metaheuristics.minimum(result)
 @show result
+@show result.stop
+@show result.termination_status_code
