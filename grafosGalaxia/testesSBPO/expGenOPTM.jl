@@ -239,7 +239,7 @@ function main()
 
     results_main= []
     n_rep = 5
-    K_STAG = 30
+    K_STAG = 50
     N_POP = 100
 
     @showprogress 1 "Processando: " for (idx, file) in enumerate(all_files)
