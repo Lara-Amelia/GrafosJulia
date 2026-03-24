@@ -224,7 +224,7 @@ function run_ga_experiment(k_limit::Int, N_pop::Int)
     my_ga = Metaheuristics.Algorithm(params, options = opt_settings)
     
     result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_ga)
-    @show result
+    #@show result
     return Int(Metaheuristics.minimum(result))
 end
 
