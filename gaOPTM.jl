@@ -26,6 +26,8 @@ leArestasLista!(nome_arquivo, lista_adj)
 const ADJ = lista_adj
 const V = num_vertices
 
+const P_BUFFER = zeros(Int, V)
+
 # probabilidade associada a crossover, a mutação, etc (por enquanto não será aplicado)
 mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     N::Int
@@ -49,9 +51,9 @@ end
 
 # fitness da coloração sem utilizar hash (verificar depois se isso ajuda ou atrapalha)
 function fitness_harmonious_coloring(individual::Vector{Float64})
-    lista_prioridade = sortperm(individual, rev = true)
+    sortperm!(P_BUFFER, individual, rev = true)
 
-    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, lista_prioridade)
+    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, P_BUFFER)
     fitness = maximum(cores_vertices)
     return fitness
 end
@@ -65,8 +67,8 @@ function crossover_simple_mean!(population)
     # seleciona os elementos/pais (os que estão lado a lado são pareados)
     Q = positions(population) # matriz para representar indivíduos e genes
 
-    Q1 = Q[1:2:end-1, :]
-    Q2 = Q[2:2:end,   :]
+    @views Q1 = Q[1:2:end-1, :]
+    @views Q2 = Q[2:2:end,   :]
 
     children = (Q1 .+ Q2) ./ 2.0
 
@@ -106,10 +108,14 @@ function graph_swap_mutation!(Q::AbstractMatrix{Float64})
 end
 
 function replacement_elitism(population, offsprings, N)
-    combined = append!(population, offsprings)
-
+    #=combined = append!(population, offsprings)
     sort!(combined, alg=PartialQuickSort(N), by = s -> s.f)
+    deleteat!(population, (N+1):length(population))=#
 
+    N = length(population) 
+    append!(population, offsprings) 
+    #sort!(population, by = s -> s.f) 
+    sort!(population, lt=is_better)
     deleteat!(population, (N+1):length(population))
 end
 
@@ -165,13 +171,13 @@ function Metaheuristics.update_state!(state,
         parameters.stag_iters += 1
     end
 
-    if parameters.stag_iters < parameters.stag_limit
+    #=if parameters.stag_iters < parameters.stag_limit
         println("nro. de iterações estagnadas: $(parameters.stag_iters)")
         println("AINDA NÃO ATINGIMOS O LIMITE DE ITERAÇÕES SEM MELHORA")
-    end
+    end=#
 
     if Metaheuristics.is_better(current_best, state.best_sol)
-        state.best_sol = deepcopy(current_best)
+        state.best_sol = current_best 
     end
 end
 

@@ -147,11 +147,11 @@ function Metaheuristics.initialize!(
         end
     end=#
 
-    sort!(state.population, by = s -> s.f)
+    #= desnecessário - já é feito em gen_ninitial_state
+    sort!(state.population, by = s -> s.f) # pode não ser necessário
 
     parameters.last_best = state.population[1].f
-    state.best_sol = deepcopy(state.population[1])
-
+    state.best_sol = deepcopy(state.population[1])=#
     return state
 end
 
@@ -167,7 +167,7 @@ function Metaheuristics.update_state!(
     offspring = Metaheuristics.xf_solution[]
 
     # debug: print initial population fitness distribution
-    @info "Population fitnesses: " [s.f for s in pop]
+    # @info "Population fitnesses: " [s.f for s in pop]
 
     function tournament_select(pop)
         k = 2
@@ -226,7 +226,6 @@ function Metaheuristics.update_state!(
     end
 
     return true
-
 end
 
 # caso queiramos fazer algum tratamento extra sobre o estado final do GA (por agora não)

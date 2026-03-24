@@ -26,6 +26,9 @@ leArestasLista!(nome_arquivo, lista_adj)
 const ADJ = lista_adj
 const V = num_vertices
 
+# será usado como vetor de prioridades (evitar que ocorram muitas realocaçõe)
+const P_BUFFER = zeros(Int, V)
+
 # probabilidade associada a crossover, a mutação, etc (por enquanto não será aplicado)
 mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     N::Int
@@ -37,11 +40,6 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     crossover::Metaheuristics.BinomialCrossover
 end
 
-# o valor k (limite de iterações estagnadas será lido da entrada)
-#=CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = k, 
-                 last_best = -1, stag_iters = 0) =
-    CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters)=#
-
 function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 50, last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     cross_op = Metaheuristics.BinomialCrossover(p = 0.5, n_offsprings = 2)
@@ -52,9 +50,9 @@ end
 
 # fitness da coloração sem utilizar hash (verificar depois se isso ajuda ou atrapalha)
 function fitness_harmonious_coloring(individual::Vector{Float64})
-    lista_prioridade = sortperm(individual, rev = true)
+    sortperm!(P_BUFFER, individual, rev = true)
 
-    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, lista_prioridade)
+    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, P_BUFFER)
     fitness = maximum(cores_vertices)
     return fitness
 end
@@ -64,24 +62,10 @@ end
 # aparentemente, não será necessário sobrescrever o método initialize! (ou podemos apenas chamar gen_initial_state)
 # population será um array simples de valores 
 
-function crossover_simple_mean!(population)
-    # seleciona os elementos/pais (os que estão lado a lado são pareados)
-    Q = positions(population) # matriz para representar indivíduos e genes
-
-    Q1 = Q[1:2:end-1, :]
-    Q2 = Q[2:2:end,   :]
-
-    children = (Q1 .+ Q2) ./ 2.0
-
-    # children é uma matriz 50 x n_vertices
-    return children 
-end
-
 # um jeito mais fácil de realmente integrar os novos métodos pode ser reescrever update_state!,
 # mas apenas substituindo as chamadas a crossover e mutação por nossos próprios métodos
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    # adj_list = ADJ
     p = 0.5 # probabilidade de ocorência de mutação nos filhos do crossover
 
     # "pré-seleção" dos filhos que serão mutados
@@ -109,10 +93,14 @@ function graph_swap_mutation!(Q::AbstractMatrix{Float64})
 end
 
 function replacement_elitism(population, offsprings, N)
-    combined = append!(population, offsprings)
-
+    #=combined = append!(population, offsprings)
     sort!(combined, alg=PartialQuickSort(N), by = s -> s.f)
+    deleteat!(population, (N+1):length(population))=#
 
+    N = length(population) 
+    append!(population, offsprings) 
+    #sort!(population, by = s -> s.f) 
+    sort!(population, lt=is_better)
     deleteat!(population, (N+1):length(population))
 end
 
@@ -136,6 +124,7 @@ function Metaheuristics.initialize!(status,
             problem, parameters, information, options, status)
 end 
 
+# sobre-escrita do método de atualização de estado com os operadores e critério de parada próprios
 function Metaheuristics.update_state!(state,
     parameters::CustomGAParams,
     problem, # como avaliamos o fitness das soluções
@@ -169,13 +158,13 @@ function Metaheuristics.update_state!(state,
         parameters.stag_iters += 1
     end
 
-    if parameters.stag_iters < parameters.stag_limit
+    #=if parameters.stag_iters < parameters.stag_limit
         println("nro. de iterações estagnadas: $(parameters.stag_iters)")
         println("AINDA NÃO ATINGIMOS O LIMITE DE ITERAÇÕES SEM MELHORA")
-    end
+    end=#
 
     if Metaheuristics.is_better(current_best, state.best_sol)
-        state.best_sol = deepcopy(current_best)
+        state.best_sol = current_best 
     end
 end
 
@@ -219,8 +208,7 @@ bounds = [zeros(V) ones(V)]'
 
 params = CustomGAParams(N=100, p_mutation=0.5, stag_limit=50, last_best=Inf)
 
-#opt_settings = Metaheuristics.Options(f_calls_limit = typemax(Int), iterations = 1000, store_convergence = true)
-# novos parâmetros definidos em Options para evitar convergências "automáticas" da biblioteca
+# valores em options para garantir o uso somente do critério de parada definido
 opt_settings = Metaheuristics.Options(
     f_calls_limit = typemax(Int), 
     iterations = 10000, 
@@ -229,6 +217,7 @@ opt_settings = Metaheuristics.Options(
     x_tol = -1
 )
 
+# instanciação do GA personalizado
 my_ga = Metaheuristics.Algorithm(params, options = opt_settings)
 problem = Metaheuristics.Problem(fitness_harmonious_coloring, bounds)
 
