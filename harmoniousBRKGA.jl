@@ -17,9 +17,11 @@ leArestasLista!(nome_arquivo, lista_adj)
 const ADJ = lista_adj
 const V = num_vertices
 
+const P_BUFFER = zeros(Int, V)
+
 function fitness_harmonious_coloring(individual::Vector{Float64})
-    lista_prioridade = sortperm(individual, rev = true)
-    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, lista_prioridade)
+    sortperm!(P_BUFFER, individual, rev = true)
+    cores_vertices = coloracaoHarmonicaAdjVetAux!(ADJ, P_BUFFER)
     return Float64(maximum(cores_vertices))
 end
 
