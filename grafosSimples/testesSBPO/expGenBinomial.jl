@@ -84,7 +84,7 @@ function replacement_elitism(population, offsprings, N)
     N = length(population) 
     append!(population, offsprings) 
     #sort!(population, by = s -> s.f) 
-    sort!(population, lt=is_better)
+    sort!(population, lt=Metaheuristics.is_better)
     deleteat!(population, (N+1):length(population))
 end
 
@@ -125,7 +125,7 @@ function Metaheuristics.update_state!(state,
 
     offsprings = Metaheuristics.create_solutions(Q, problem)
 
-    replacement_elitism(pop, offsprings, params.N)
+    replacement_elitism(pop, offsprings, parameters.N)
     current_best = Metaheuristics.get_best(pop)
 
     # lógica para critério de parada por gerações em estagnação
@@ -193,10 +193,16 @@ function run_ga_experiment(k_limit::Int, N_pop::Int)
     params = CustomGAParams(N=N_pop, p_mutation=0.5, stag_limit=k_limit)
     
     # f_tol = -1 garante que o algoritmo não pare por precisão numérica
-    opt_settings = Metaheuristics.Options(iterations = 1000, f_tol = -1.0)
+    opt_settings = Metaheuristics.Options(
+    f_calls_limit = typemax(Int), 
+    iterations = 10000, 
+    store_convergence = true,
+    f_tol = -1, 
+    x_tol = -1)
     my_ga = Metaheuristics.Algorithm(params, options = opt_settings)
     
     result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, my_ga)
+    @show result
     return Int(Metaheuristics.minimum(result))
 end
 
