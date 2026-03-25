@@ -171,7 +171,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_GA_Bi_pmutation05_stag50_progresso1.csv"
+    csv_path = "results_GA_Bi_pmutation06_stag20_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
