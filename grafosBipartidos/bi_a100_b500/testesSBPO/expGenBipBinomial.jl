@@ -24,7 +24,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     crossover::Metaheuristics.BinomialCrossover
 end
 
-function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 50, last_best = Inf, stag_iters = 0)
+function CustomGAParams(; N = 100, p_mutation = 0.6, stag_limit = 20, last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     cross_op = Metaheuristics.BinomialCrossover(p = 0.5, n_offsprings = 2)
     
@@ -50,7 +50,7 @@ end
 # mas apenas substituindo as chamadas a crossover e mutação por nossos próprios métodos
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    p = 0.5 # probabilidade de ocorência de mutação nos filhos do crossover
+    p = 0.6 # probabilidade de ocorência de mutação nos filhos do crossover
 
     # "pré-seleção" dos filhos que serão mutados
     to_mutate = findall(rand(n_individuals) .< p)
@@ -191,7 +191,7 @@ end
 function run_ga_experiment(k_limit::Int, N_pop::Int)
     bounds = [zeros(V) ones(V)]'
 
-    params = CustomGAParams(N=N_pop, p_mutation=0.5, stag_limit=k_limit)
+    params = CustomGAParams(N=N_pop, p_mutation=0.6, stag_limit=k_limit)
 
     opt_settings = Metaheuristics.Options(
     f_calls_limit = typemax(Int), 
@@ -230,7 +230,7 @@ function main()
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10
     
