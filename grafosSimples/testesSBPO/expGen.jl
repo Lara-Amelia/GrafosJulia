@@ -34,7 +34,7 @@ end
                  last_best = -1, stag_iters = 0) =
     CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters)=#
 
-function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 20, 
+function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 50, 
                          last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     return CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters, selection_strategy)
@@ -230,17 +230,17 @@ end
 
 function main()
     # configuração de filtros para instâncias 
-    FILTER_N = [100, 500, 1000, 1500, 2000] 
+    FILTER_N = [100, 500, 1000, 1500] 
     FILTER_P = [1, 3, 5, 10, 20, 30, 40] 
     FILTER_V = [1, 2]
 
     # configuração dos testes
     N_REPETITIONS = 5
-    K_STAG = 20
+    K_STAG = 50
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_GA_pmutation0.5_stag20_progresso.csv"
+    csv_path = "results_GA_pmutation0.5_stag50_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
