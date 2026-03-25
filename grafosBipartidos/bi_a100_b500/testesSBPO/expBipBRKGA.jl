@@ -134,11 +134,11 @@ function main()
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 20
+    K_STAG = 50
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_BRKGA_Bi_stag20_progresso1.csv"
+    csv_path = "results_BRKGA_Bi_stag50_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
