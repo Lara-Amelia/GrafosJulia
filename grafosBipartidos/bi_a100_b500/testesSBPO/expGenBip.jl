@@ -28,7 +28,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     selection::Metaheuristics.TournamentSelection
 end
 
-function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 50, 
+function CustomGAParams(; N = 100, p_mutation = 0.6, stag_limit = 20, 
                           last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     return CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters, selection_strategy)
@@ -50,7 +50,7 @@ end
 
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    p = 0.5 # ALTERAR PARA MUDAR PROB. DE MUTAÇÃO 
+    p = 0.6 # ALTERAR PARA MUDAR PROB. DE MUTAÇÃO 
     to_mutate = findall(rand(n_individuals) .< p)
     for i in to_mutate
         v1 = rand(1:n_genes)
@@ -167,7 +167,7 @@ function main()
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10
     
