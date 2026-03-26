@@ -24,7 +24,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     crossover::Metaheuristics.BinomialCrossover
 end
 
-function CustomGAParams(; N = 100, p_mutation = 0.8, stag_limit = 50, last_best = Inf, stag_iters = 0)
+function CustomGAParams(; N = 100, p_mutation = 0.5, stag_limit = 20, last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     cross_op = Metaheuristics.BinomialCrossover(p = 0.5, n_offsprings = 2)
     
@@ -50,7 +50,7 @@ end
 # mas apenas substituindo as chamadas a crossover e mutação por nossos próprios métodos
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    p = 0.8 # probabilidade de ocorência de mutação nos filhos do crossover
+    p = 0.5 # probabilidade de ocorência de mutação nos filhos do crossover
 
     # "pré-seleção" dos filhos que serão mutados
     to_mutate = findall(rand(n_individuals) .< p)
@@ -208,17 +208,17 @@ end
 
 function main()
     # configuração de filtros para instâncias 
-    FILTER_N = [100, 500, 1000, 1500] 
+    FILTER_N = [500] 
     FILTER_P = [1, 3, 5, 10, 20, 30, 40] 
     FILTER_V = [1, 2]
 
     # configuração dos testes
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_GABinomial_pmutation0.8_stag50_progresso.csv"
+    csv_path = "results_GABinomial_n500_pmutation0.5_stag20_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
