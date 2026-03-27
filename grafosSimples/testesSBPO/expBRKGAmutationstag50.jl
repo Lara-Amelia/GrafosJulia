@@ -154,11 +154,11 @@ function main()
 
     # configuração dos testes
     N_REPETITIONS = 5
-    K_STAG = 20
+    K_STAG = 50
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_BRKGAmutation_n500_stag20_progresso.csv"
+    csv_path = "results_BRKGAmutation_n500_stag50_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
