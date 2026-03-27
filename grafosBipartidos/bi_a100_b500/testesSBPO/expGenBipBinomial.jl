@@ -24,7 +24,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     crossover::Metaheuristics.BinomialCrossover
 end
 
-function CustomGAParams(; N = 100, p_mutation = 0.2, stag_limit = 50, last_best = Inf, stag_iters = 0)
+function CustomGAParams(; N = 100, p_mutation = 0.2, stag_limit = 20, last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     cross_op = Metaheuristics.BinomialCrossover(p = 0.5, n_offsprings = 2)
     
@@ -230,11 +230,11 @@ function main()
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_GABinomial_Bi_pmutation02_stag50_progresso1.csv"
+    csv_path = "results_GABinomial_Bi_pmutation02_stag20_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
