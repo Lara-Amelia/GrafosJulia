@@ -62,7 +62,7 @@ function Metaheuristics.final_stage!(state, parameters::StagnationWrapper, probl
 end
 
 # configuração do BRKGA com critério de parada personalizado
-function StagnatedBRKGA(; num_elites=20, num_mutants=10, num_offsprings=70, bias=0.7, stag_limit=50)
+function StagnatedBRKGA(; num_elites=20, num_mutants=10, num_offsprings=70, bias=0.7, stag_limit=20)
     brkga_base = BRKGA(
         num_elites = num_elites, 
         num_mutants = num_mutants, 
@@ -134,11 +134,11 @@ function main()
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_BRKGA_Bi_stag50_progresso1.csv"
+    csv_path = "results_BRKGA_Bi_stag20_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
