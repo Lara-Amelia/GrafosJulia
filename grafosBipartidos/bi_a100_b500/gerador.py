@@ -2,15 +2,15 @@ import networkx as nx
 import os
 
 # --- Parâmetros de Execução ---
-SIZES = [100, 500, 1000, 5000]
-P_VALUES = [0.01, 0.03, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+SIZES = [250, 750]
+P_VALUES = [0.01, 0.03, 0.05, 0.10]
 NUM_VERSIONS = 5 
 
 print(f"Iniciando a verificação e geração de grafos bipartidos...")
 
 for i in range(len(SIZES)):
     a = SIZES[i]
-    for j in range(i, len(SIZES)):
+    for j in range(i+1, len(SIZES)):
         b = SIZES[j]
         for p_value in P_VALUES:
             for v in range(1, NUM_VERSIONS + 1):
