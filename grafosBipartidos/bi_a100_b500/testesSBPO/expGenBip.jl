@@ -28,7 +28,7 @@ mutable struct CustomGAParams <: Metaheuristics.AbstractParameters
     selection::Metaheuristics.TournamentSelection
 end
 
-function CustomGAParams(; N = 100, p_mutation = 0.2, stag_limit = 20, 
+function CustomGAParams(; N = 100, p_mutation = 0.6, stag_limit = 20, 
                           last_best = Inf, stag_iters = 0)
     selection_strategy = Metaheuristics.TournamentSelection(K=2, N=N)
     return CustomGAParams(N, p_mutation, stag_limit, last_best, stag_iters, selection_strategy)
@@ -128,7 +128,7 @@ end
 function run_ga_experiment(k_limit::Int, N_pop::Int)
     bounds = [zeros(V) ones(V)]'
 
-    params = CustomGAParams(N=N_pop, p_mutation=0.2, stag_limit=k_limit)
+    params = CustomGAParams(N=N_pop, p_mutation=0.6, stag_limit=k_limit)
 
     opt_settings = Metaheuristics.Options(
     f_calls_limit = typemax(Int), 
@@ -160,10 +160,10 @@ end
 
 function main()
     # filtros de instâncias
-    TARGET_A = [100, 500, 1000]        
+    TARGET_A = [100, 500]        
     TARGET_B = [100, 500]        
-    TARGET_P = nothing      # processa todas as probabilidades
-    TARGET_V = [1, 2] # processa versões de 1 a 5
+    TARGET_P = [1, 3, 5, 10]     # processa todas as probabilidades
+    TARGET_V = [3, 4, 5] # processa versões de 1 a 5
 
     # configs. do experimento
     N_REPETITIONS = 5
@@ -171,7 +171,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_GA_Bi_pmutation02_stag20_progresso1.csv"
+    csv_path = "results_GA_Bi_pmutation06_stag20_v3v4v5_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
