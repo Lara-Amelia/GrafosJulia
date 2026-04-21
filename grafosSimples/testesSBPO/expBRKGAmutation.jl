@@ -148,7 +148,7 @@ end
 
 function main()
     # configuração de filtros para instâncias 
-    FILTER_N = [100, 500] 
+    FILTER_N = [100, 500, 1000, 1500] 
     FILTER_P = [1, 3, 5, 10] 
     FILTER_V = [3, 4, 5]
 
@@ -158,7 +158,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_BRKGAmutation_stag20_v3v4v5_progresso.csv"
+    csv_path = "results_simples_BRKGAmutation_stag20_v3v4v5_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
