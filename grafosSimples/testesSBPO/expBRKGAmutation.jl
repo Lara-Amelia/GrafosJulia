@@ -148,17 +148,17 @@ end
 
 function main()
     # configuração de filtros para instâncias 
-    FILTER_N = [100, 500, 1000, 1500, 2000] 
-    FILTER_P = [1, 3, 5, 10, 20, 30, 40] 
-    FILTER_V = [1, 2]
+    FILTER_N = [100, 500] 
+    FILTER_P = [1, 3, 5, 10] 
+    FILTER_V = [3, 4, 5]
 
     # configuração dos testes
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_BRKGAmutation_progresso.csv"
+    csv_path = "results_BRKGAmutation_stag20_v3v4v5_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
