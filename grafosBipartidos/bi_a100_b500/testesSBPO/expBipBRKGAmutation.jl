@@ -162,18 +162,18 @@ end
 
 function main()
     # filtros de instâncias
-    TARGET_A = [100, 500, 1000]        
+    TARGET_A = [100, 500]        
     TARGET_B = [100, 500]        
-    TARGET_P = nothing      # processa todas as probabilidades
-    TARGET_V = [1, 2] # processa versões de 1 a 5
+    TARGET_P = [1, 3, 5, 10]      # processa todas as probabilidades
+    TARGET_V = [3, 4, 5] # processa versões de 1 a 5
 
     # configs. do experimento
     N_REPETITIONS = 5
-    K_STAG = 50
+    K_STAG = 20
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_BRKGAmutation_Bi_stag50_progresso1.csv"
+    csv_path = "results_BRKGAmutation_Bi_stag20_v3v4v5_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
