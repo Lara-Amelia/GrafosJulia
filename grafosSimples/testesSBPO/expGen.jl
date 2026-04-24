@@ -72,7 +72,7 @@ end
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
     # adj_list = ADJ
-    p = 0.2 # probabilidade de ocorência de mutação nos filhos do crossover
+    p = 0.5 # probabilidade de ocorência de mutação nos filhos do crossover
 
     # "pré-seleção" dos filhos que serão mutados
     to_mutate = findall(rand(n_individuals) .< p)
@@ -240,7 +240,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10  # frequência de limpeza da memória e salvamento no disco
     
-    csv_path = "results_GA_pmutation0.5_stag20_v3v4v5_progresso.csv"
+    csv_path = "results_GA_pmutation0.5_stag20_v3v4v5_CORRECTED_progresso.csv"
 
     # localização e filtragem
     raiz_grafos = dirname(@__DIR__) 
