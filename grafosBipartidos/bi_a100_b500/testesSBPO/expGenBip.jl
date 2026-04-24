@@ -50,7 +50,7 @@ end
 
 function graph_swap_mutation!(Q::AbstractMatrix{Float64})
     n_individuals, n_genes = size(Q)
-    p = 0.2 # ALTERAR PARA MUDAR PROB. DE MUTAÇÃO 
+    p = 0.6 # ALTERAR PARA MUDAR PROB. DE MUTAÇÃO 
     to_mutate = findall(rand(n_individuals) .< p)
     for i in to_mutate
         v1 = rand(1:n_genes)
@@ -171,7 +171,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_GA_Bi_pmutation06_stag20_a250b750_progresso1.csv"
+    csv_path = "results_GA_Bi_pmutation06_stag20_a250b750_CORRECT_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 

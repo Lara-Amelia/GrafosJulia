@@ -1,4 +1,3 @@
-# experimentos SBPO BRKGA com Mutação personalizada de Swap e Checkpoints
 using Metaheuristics
 using LinearAlgebra
 using Statistics
@@ -68,30 +67,45 @@ function Metaheuristics.final_stage!(state, parameters::StagnationWrapper, probl
     return Metaheuristics.final_stage!(state, parameters.internal_params, problem, information, options)
 end
 
-# mutação customizada (graph swap)
+# mutação customizada (graph swap) - MODIFIED: only mutates the mutant pool
 struct GraphSwapMutation
     p::Float64
+    num_mutants::Int
+    n_elites::Int
+    n_offspring::Int
 end
 
 function Metaheuristics.mutation!(Q::AbstractMatrix{Float64}, mut::GraphSwapMutation)
     n_individuals, n_genes = size(Q)
-    to_mutate = findall(rand(n_individuals) .< mut.p)
-
-    for i in to_mutate
-        v1 = rand(1:n_genes)
-        vizinhos = ADJ[v1]
-        if isempty(vizinhos) continue end
-
-        v2 = rand(vizinhos)
-        @inbounds begin
-            tmp = Q[i, v1]
-            Q[i, v1] = Q[i, v2]
-            Q[i, v2] = tmp
-        end 
+    
+    # Calculate mutant indices (the last mut.num_mutants positions)
+    # Population structure after environmental selection:
+    # 1:mut.n_elites = elite set (preserved unchanged)
+    # (mut.n_elites+1):(mut.n_elites+mut.n_offspring) = offspring (preserved)
+    # The rest = mutant pool (the ones we mutate)
+    
+    start_mutants = mut.n_elites + mut.n_offspring + 1
+    mutant_indices = start_mutants:n_individuals
+    
+    # Only mutate individuals in the mutant pool
+    for i in mutant_indices
+        if rand() < mut.p
+            v1 = rand(1:n_genes)
+            vizinhos = ADJ[v1]
+            if isempty(vizinhos)
+                continue
+            end
+            v2 = rand(vizinhos)
+            @inbounds begin
+                tmp = Q[i, v1]
+                Q[i, v1] = Q[i, v2]
+                Q[i, v2] = tmp
+            end
+        end
     end
 end
 
-# --- 5. CONSTRUTOR DO ALGORITMO ---
+# --- CONSTRUTOR DO ALGORITMO ---
 function MyStagnatedBRKGA(;
         num_elites = 20,
         num_mutants = 10,
@@ -106,7 +120,7 @@ function MyStagnatedBRKGA(;
         initializer = Metaheuristics.RandomInBounds(; N),
         selection   = Metaheuristics.BiasedSelection(num_elites, num_offsprings),
         crossover   = Metaheuristics.BinomialCrossover(p = bias, n_offsprings = 1),
-        mutation    = GraphSwapMutation(1.0), # Prob. 1.0 pois o BRKGA já seleciona quem deve mutar
+        mutation    = GraphSwapMutation(1.0, num_mutants, num_elites, num_offsprings),
         environmental_selection = Metaheuristics.ElitistReplacement(),
         kargs...
     )
@@ -142,7 +156,6 @@ function run_brkga_experiment(k_limit::Int, N_pop::Int)
     )
 
     result = Metaheuristics.optimize(fitness_harmonious_coloring, bounds, alg)
-    #@show result
     return Int(Metaheuristics.minimum(result))
 end
 
@@ -162,10 +175,10 @@ end
 
 function main()
     # filtros de instâncias
-    TARGET_A = [250]        
-    TARGET_B = [750]        
+    TARGET_A = [100, 500, 250]        
+    TARGET_B = [100, 500, 750]        
     TARGET_P = [1, 3, 5, 10]      # processa todas as probabilidades
-    TARGET_V = [1, 2, 3, 4, 5] # processa versões de 1 a 5
+    TARGET_V = [1, 2, 3, 4, 5]    # processa versões de 1 a 5
 
     # configs. do experimento
     N_REPETITIONS = 5
@@ -173,7 +186,7 @@ function main()
     N_POP = 100
     SAVE_EVERY = 10
     
-    csv_path = "results_BRKGAmutation_Bi_stag20_a250b750_progresso1.csv"
+    csv_path = "results_BRKGAmutation_CORRECT_allBi_progresso1.csv"
 
     # busca e filtragem de arquivos de entrada
     raiz_busca = dirname(@__DIR__) 
