@@ -158,11 +158,11 @@ function main()
     # 5. Geração dos CSVs
     df_detailed = DataFrame(detailed_results)
     sort!(df_detailed, [:a, :b, :p, :v])
-    CSV.write("resultsGulADJ.csv", df_detailed)
+    CSV.write("resultsGulADJa250b750.csv", df_detailed)
 
     df_summary = DataFrame(summary_results)
     sort!(df_summary, [:a, :b, :p, :v])
-    CSV.write("resultsGulADJ_sumario.csv", df_summary)
+    CSV.write("resultsGulADJa250b750_sumario.csv", df_summary)
 
     println("\n--- Experimentos Concluídos! ---")
 end
