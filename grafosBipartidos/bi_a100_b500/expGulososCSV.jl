@@ -67,7 +67,7 @@ function main()
     )
 
     # 2. Filtragem de Arquivos
-    filtered_file_names = filter(f -> startswithswith(f, "bi_a250_b750"), readdir())
+    filtered_file_names = filter(f -> startswith(f, "bi_a250_b750"), readdir())
 
     if isempty(filtered_file_names)
         println("AVISO: Nenhum arquivo .col encontrado no diretório.")
