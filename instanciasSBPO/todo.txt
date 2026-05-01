@@ -1,0 +1,2 @@
+inserir instancias usadas para testagem no SBPO
+organização do repositório como um todo
